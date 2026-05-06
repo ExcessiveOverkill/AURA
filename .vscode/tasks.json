@@ -1,0 +1,128 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Test: All",
+            "type": "shell",
+            "command": "${workspaceFolder}/.venv/Scripts/pytest.exe",
+            "args": [
+                "register_mapper/tests/",
+                "device_firmware_gen/tests/",
+                "device_messaging_gen/tests/",
+                "-v",
+                "--tb=short"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test: register_mapper",
+            "type": "shell",
+            "command": "${workspaceFolder}/.venv/Scripts/pytest.exe",
+            "args": [
+                "register_mapper/tests/",
+                "-v",
+                "--tb=short"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test: device_firmware_gen",
+            "type": "shell",
+            "command": "${workspaceFolder}/.venv/Scripts/pytest.exe",
+            "args": [
+                "device_firmware_gen/tests/",
+                "-v",
+                "--tb=short"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test: device_firmware_gen (no compile)",
+            "type": "shell",
+            "command": "${workspaceFolder}/.venv/Scripts/pytest.exe",
+            "args": [
+                "device_firmware_gen/tests/",
+                "-v",
+                "--tb=short",
+                "-k", "not compil"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test: probe (behavioral)",
+            "type": "shell",
+            "command": "${workspaceFolder}/.venv/Scripts/pytest.exe",
+            "args": [
+                "device_firmware_gen/tests/test_probe.py",
+                "-v",
+                "--tb=short"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test: device_messaging_gen",
+            "type": "shell",
+            "command": "${workspaceFolder}/.venv/Scripts/pytest.exe",
+            "args": [
+                "device_messaging_gen/tests/",
+                "-v",
+                "--tb=short"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Generate: device_messaging_gen example",
+            "type": "shell",
+            "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+            "args": [
+                "device_messaging_gen/messaging_gen.py"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

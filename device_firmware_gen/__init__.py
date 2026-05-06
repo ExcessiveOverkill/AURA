@@ -1,0 +1,1 @@
+from device_firmware_gen.firmware_gen import FirmwareGenerator

@@ -1,0 +1,10 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        ".venv/Scripts/python.exe": true
+    },
+    "C_Cpp.default.cppStandard": "gnu++23",
+    "C_Cpp.default.cStandard": "c23",
+    "python.analysis.extraPaths": [
+        "."
+    ]
+}

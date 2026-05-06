@@ -1,0 +1,6 @@
+*.pyc
+.claude/
+.venv/
+temp/
+device_firmware_gen/output/
+device_messaging_gen/output/

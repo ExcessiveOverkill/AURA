@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aura-gen"
+version = "0.1.0"
+description = "Automatic Universal Register Addressing — generate C++ firmware register maps and messaging from Python definitions"
+readme = "README.md"
+requires-python = ">=3.9"
+
+[tool.setuptools]
+packages = ["aura", "register_mapper", "device_firmware_gen", "device_messaging_gen"]
+py-modules = ["cpp_writer"]
