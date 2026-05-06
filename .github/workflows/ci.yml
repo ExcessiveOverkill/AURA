@@ -23,7 +23,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: pip install pytest
+        run: pip install pytest -e .
 
       - name: Run tests
-        run: pytest register-mapper/tests/ -v
+        run: pytest register_mapper/tests/ device_firmware_gen/tests/ device_messaging_gen/tests/ -v

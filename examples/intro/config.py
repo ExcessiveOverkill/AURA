@@ -9,6 +9,7 @@ Output: examples/intro/generated/
 """
 import sys
 import os
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from aura import (
@@ -25,6 +26,7 @@ device = AURADevice(
     word_width=8,  # The device's minimum addressable width (bits). Usually 8.
     compatible_drivers=["aura-intro"],  # Used by the host to identify which driver to load for this device, multiple may be specified.
     desc="Introductory example for AURA",   # Description of the device, used in generated code and documentation.
+    interfaces="shell",   # Optional list of interfaces to generate code for, currently supports "shell" for generating a device shell and host shim. Multiple may be specified.
 )
 
 rm = device.regmap

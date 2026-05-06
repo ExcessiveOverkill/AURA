@@ -12,3 +12,6 @@ requires-python = ">=3.9"
 [tool.setuptools]
 packages = ["aura", "register_mapper", "device_firmware_gen", "device_messaging_gen"]
 py-modules = ["cpp_writer"]
+
+[tool.setuptools.package-data]
+device_firmware_gen = ["device_shell/*.hpp", "device_shell/*.cpp"]

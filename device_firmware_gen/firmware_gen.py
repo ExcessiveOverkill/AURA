@@ -267,7 +267,7 @@ class FirmwareGenerator:
 
     def _copy_shell_static_files(self, output_dir: str):
         import shutil
-        shell_src = os.path.join(os.path.dirname(__file__), "..", "device-shell")
+        shell_src = os.path.join(os.path.dirname(__file__), "device_shell")
         for fname in ("reg_shell.hpp", "reg_shell.cpp", "reg_doc_types.hpp"):
             shutil.copy2(os.path.join(shell_src, fname), os.path.join(output_dir, fname))
 
