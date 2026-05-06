@@ -26,7 +26,7 @@ from device_firmware_gen.reg_probe import RegProbe, RegStatus
 
 def _compile_host(compiler: str, rm, tmp_dir: str):
     """Generate + compile the host shim.  Returns (binary_path, gen)."""
-    gen     = FirmwareGenerator(rm)
+    gen     = FirmwareGenerator(rm, interfaces="shell")
     out_dir = os.path.join(tmp_dir, "out")
     os.makedirs(out_dir, exist_ok=True)
     gen.generate(out_dir)
@@ -833,7 +833,7 @@ class TestHostTestGuard:
         rm.generate()
         out = str(tmp_path / "out")
         os.makedirs(out)
-        gen = FirmwareGenerator(rm)
+        gen = FirmwareGenerator(rm, interfaces="shell")
         gen.generate(out)
         prefix = gen._prefix()
         host_src = os.path.join(out, f"{prefix}_reg_host.cpp")

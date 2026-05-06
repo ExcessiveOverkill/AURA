@@ -49,13 +49,15 @@ def _case_id(case):
 # ---------------------------------------------------------------------------
 
 class TestFileCreation:
-    EXPECTED_SUFFIXES = [
+    CORE_SUFFIXES = [
         "reg_types.hpp",
         "reg_storage.hpp",
         "reg_storage.cpp",
         "reg_device.hpp",
         "reg_comm.hpp",
         "reg_comm.cpp",
+    ]
+    SHELL_SUFFIXES = [
         "reg_verify.cpp",
         "reg_host.cpp",
         "reg_doc.hpp",
@@ -63,17 +65,33 @@ class TestFileCreation:
         "reg_meta.hpp",
         "reg_meta.cpp",
     ]
+    SHELL_STATIC_FILES = [
+        "reg_shell.hpp",
+        "reg_shell.cpp",
+        "reg_doc_types.hpp",
+    ]
 
-    def test_twelve_files_created(self, simple_rm, out_dir):
+    def test_six_core_files_created(self, simple_rm, out_dir):
         FirmwareGenerator(simple_rm).generate(out_dir)
-        files = os.listdir(out_dir)
-        assert len(files) == 12
+        assert len(os.listdir(out_dir)) == 6
 
-    def test_correct_filenames(self, simple_rm, out_dir):
+    def test_correct_core_filenames(self, simple_rm, out_dir):
         FirmwareGenerator(simple_rm).generate(out_dir)
         files = set(os.listdir(out_dir))
-        for suffix in self.EXPECTED_SUFFIXES:
+        for suffix in self.CORE_SUFFIXES:
             assert f"test_mod_{suffix}" in files
+
+    def test_shell_creates_fifteen_files(self, simple_rm, out_dir):
+        FirmwareGenerator(simple_rm, interfaces="shell").generate(out_dir)
+        assert len(os.listdir(out_dir)) == 15
+
+    def test_shell_filenames(self, simple_rm, out_dir):
+        FirmwareGenerator(simple_rm, interfaces="shell").generate(out_dir)
+        files = set(os.listdir(out_dir))
+        for suffix in self.CORE_SUFFIXES + self.SHELL_SUFFIXES:
+            assert f"test_mod_{suffix}" in files
+        for fname in self.SHELL_STATIC_FILES:
+            assert fname in files
 
     def test_output_dir_created_if_missing(self, tmp_path):
         rm = RegisterMapGenerator("x_mod", [], word_width=32)
@@ -110,7 +128,7 @@ class TestCorrectness:
 
     def test_generate_from_json_smoke(self, json_rm, out_dir):
         FirmwareGenerator(json_rm).generate(out_dir)
-        assert len(os.listdir(out_dir)) == 12
+        assert len(os.listdir(out_dir)) == 6
 
     def test_generate_idempotent(self, simple_rm, tmp_path):
         out1 = str(tmp_path / "out1")
@@ -146,7 +164,7 @@ class TestCorrectness:
         out = str(tmp_path / "out")
         os.makedirs(out)
         FirmwareGenerator(rm).generate(out)
-        assert len(os.listdir(out)) == 12
+        assert len(os.listdir(out)) == 6
 
 
 # ---------------------------------------------------------------------------
@@ -217,7 +235,7 @@ def test_parametrized_generate_no_error(case, tmp_path):
     out = str(tmp_path / "out")
     os.makedirs(out)
     FirmwareGenerator(rm).generate(out)
-    assert len(os.listdir(out)) == 12
+    assert len(os.listdir(out)) == 6
 
 
 # ---------------------------------------------------------------------------

@@ -5,7 +5,7 @@ from register_mapper import RegisterMapGenerator, Register
 
 
 def _gen(rm, out_dir):
-    gen = FirmwareGenerator(rm)
+    gen = FirmwareGenerator(rm, interfaces="shell")
     gen.generate(out_dir)
     return gen
 

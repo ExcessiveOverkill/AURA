@@ -1,11 +1,29 @@
 import os
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
 from datetime import date
+from typing import Union
 
 from register_mapper import RegisterMapGenerator, Register, Group
 from device_firmware_gen import FirmwareGenerator
 from device_messaging_gen import MessagingGenerator, Message, MessageGroup, MessageSeverity
+
+
+class ProtocolInterface(Enum):
+    SHELL = "shell"
+
+
+def _normalize_interfaces(interfaces) -> frozenset:
+    """Accept None, a single ProtocolInterface/str, or a list of either."""
+    if interfaces is None:
+        return frozenset()
+    if isinstance(interfaces, (str, ProtocolInterface)):
+        interfaces = [interfaces]
+    return frozenset(
+        i.value if isinstance(i, ProtocolInterface) else i
+        for i in interfaces
+    )
 
 
 @dataclass
@@ -45,8 +63,10 @@ class AURADevice:
         word_width: int = 32,
         compatible_drivers: list = [],
         desc: str = "",
+        interfaces: Union[ProtocolInterface, str, list, None] = None,
     ):
         self.name = name
+        self.interfaces = _normalize_interfaces(interfaces)
         self.protocol = ProtocolConfig(
             word_width=word_width,
             compatible_drivers=compatible_drivers,
@@ -83,7 +103,7 @@ class AURADevice:
         # Registers
         self.regmap.generate()
         self.regmap.exportJSON(str(reg_dir / f"{self.name}_regmap.json"))
-        FirmwareGenerator(self.regmap).generate(str(reg_dir))
+        FirmwareGenerator(self.regmap, interfaces=self.interfaces).generate(str(reg_dir))
 
         # Messaging (optional)
         has_messages = bool(self.messages)
@@ -92,7 +112,7 @@ class AURADevice:
             MessagingGenerator(self.name, self.messages).generate(str(msg_dir))
 
         # Master include
-        _write_master_include(out, self.name, has_messages)
+        _write_master_include(out, self.name, has_messages, self.interfaces)
 
         # Docs
         generate_register_docs(self.regmap, doc_dir)
@@ -107,7 +127,7 @@ class AURADevice:
         print(f"  docs/")
 
 
-def _write_master_include(out: Path, name: str, has_messages: bool) -> None:
+def _write_master_include(out: Path, name: str, has_messages: bool, interfaces: frozenset = frozenset()) -> None:
     lines = [
         f"// {name}_aura.hpp -- AURA generated master include -- do not edit",
         f"// Re-run config.py to regenerate.  Generated: {date.today()}",
@@ -118,9 +138,12 @@ def _write_master_include(out: Path, name: str, has_messages: bool) -> None:
         f'#include "registers/{name}_reg_storage.hpp"',
         f'#include "registers/{name}_reg_device.hpp"',
         f'#include "registers/{name}_reg_comm.hpp"',
-        f'#include "registers/{name}_reg_doc.hpp"',
-        f'#include "registers/{name}_reg_meta.hpp"',
     ]
+    if "shell" in interfaces:
+        lines += [
+            f'#include "registers/{name}_reg_doc.hpp"',
+            f'#include "registers/{name}_reg_meta.hpp"',
+        ]
     if has_messages:
         lines += [
             "",

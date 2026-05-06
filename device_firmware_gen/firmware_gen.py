@@ -194,11 +194,22 @@ class FirmwareGenerator:
     # Supported word widths → C++ stdint type
     _WORD_TYPES = {8: "uint8_t", 16: "uint16_t", 32: "uint32_t", 64: "uint64_t"}
 
-    def __init__(self, reg_map: RegisterMapGenerator):
+    def __init__(self, reg_map: RegisterMapGenerator, interfaces=frozenset()):
         if not reg_map.generated:
             raise ValueError("RegisterMapGenerator.generate() must be called before use.")
 
         self._reg_map = reg_map
+        # Accept a single string/enum value or any iterable; normalise to frozenset of strings.
+        if isinstance(interfaces, str):
+            interfaces = frozenset({interfaces})
+        else:
+            try:
+                interfaces = frozenset(
+                    i.value if hasattr(i, "value") else i for i in interfaces
+                )
+            except TypeError:
+                interfaces = frozenset({interfaces.value if hasattr(interfaces, "value") else interfaces})
+        self._interfaces: frozenset = interfaces
         self._module_name = (
             reg_map.name.lower().replace(" ", "_").replace("-", "_")
         )
@@ -220,7 +231,15 @@ class FirmwareGenerator:
     # ------------------------------------------------------------------
 
     def generate(self, output_dir: str):
-        """Run the full pipeline and write all eight files to output_dir."""
+        """Write core register files to output_dir.
+
+        Always emits 6 core files: reg_types.hpp, reg_storage.hpp/.cpp,
+        reg_device.hpp, reg_comm.hpp/.cpp.
+
+        With "shell" in interfaces, additionally emits 6 shell files
+        (reg_verify.cpp, reg_host.cpp, reg_doc.hpp/.cpp, reg_meta.hpp/.cpp)
+        and copies the 3 static device-shell support files into output_dir.
+        """
         os.makedirs(output_dir, exist_ok=True)
 
         self._flatten()
@@ -232,16 +251,25 @@ class FirmwareGenerator:
         self._emit_device_header(output_dir)
         self._emit_comm_header(output_dir)
         self._emit_comm_source(output_dir)
-        self._emit_accessor_verify(output_dir)
-        self._emit_host_shim(output_dir)
-        self._emit_reg_doc_header(output_dir)
-        self._emit_reg_doc_source(output_dir)
-        self._emit_reg_meta_header(output_dir)
-        self._emit_reg_meta_source(output_dir)
+
+        if "shell" in self._interfaces:
+            self._emit_accessor_verify(output_dir)
+            self._emit_host_shim(output_dir)
+            self._emit_reg_doc_header(output_dir)
+            self._emit_reg_doc_source(output_dir)
+            self._emit_reg_meta_header(output_dir)
+            self._emit_reg_meta_source(output_dir)
+            self._copy_shell_static_files(output_dir)
 
     # ------------------------------------------------------------------
     # Flattening — walk the group tree, build elements + address slots
     # ------------------------------------------------------------------
+
+    def _copy_shell_static_files(self, output_dir: str):
+        import shutil
+        shell_src = os.path.join(os.path.dirname(__file__), "..", "device-shell")
+        for fname in ("reg_shell.hpp", "reg_shell.cpp", "reg_doc_types.hpp"):
+            shutil.copy2(os.path.join(shell_src, fname), os.path.join(output_dir, fname))
 
     def _flatten(self):
         """
@@ -1973,7 +2001,7 @@ class FirmwareGenerator:
             w.generated_header("ROM register metadata — doc structs and accessor API for the shell")
             w.pragma_once()
             w.include(f"{p}_reg_comm.hpp")
-            w.include(f"{p}_reg_doc_types.hpp")
+            w.include("reg_doc_types.hpp")
             w.blank()
 
             w.separator("Table-size constants")
