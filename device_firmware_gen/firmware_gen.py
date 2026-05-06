@@ -1973,7 +1973,7 @@ class FirmwareGenerator:
             w.generated_header("ROM register metadata — doc structs and accessor API for the shell")
             w.pragma_once()
             w.include(f"{p}_reg_comm.hpp")
-            w.include("reg_doc_types.hpp")
+            w.include(f"{p}_reg_doc_types.hpp")
             w.blank()
 
             w.separator("Table-size constants")

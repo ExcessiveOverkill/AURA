@@ -1,0 +1,42 @@
+{
+  "name": "test_mod",
+  "compatible_drivers": ["i2c"],
+  "driver_settings": {"address": 64},
+  "word_width": 8,
+  "base_group": {
+    "name": "base_group",
+    "address_offset": 0,
+    "description": "Base group",
+    "alignment": 1,
+    "count": 1,
+    "groups": {},
+    "registers": {
+      "status": {
+        "name": "status",
+        "address_offset": 0,
+        "type": "unsigned",
+        "bank_size": 1,
+        "description": "Status register",
+        "width": 8,
+        "word_width": 8,
+        "words_per_register": 1,
+        "starting_bit": 0,
+        "rw": "r",
+        "bit_field": {}
+      },
+      "ctrl": {
+        "name": "ctrl",
+        "address_offset": 1,
+        "type": "unsigned",
+        "bank_size": 1,
+        "description": "Control register",
+        "width": 8,
+        "word_width": 8,
+        "words_per_register": 1,
+        "starting_bit": 0,
+        "rw": "rw",
+        "bit_field": {}
+      }
+    }
+  }
+}
