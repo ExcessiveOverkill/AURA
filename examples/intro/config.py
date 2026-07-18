@@ -262,18 +262,25 @@ rm.add(multiple_groups)
 # Messages
 # ---------------------------------------------------------------------------
 
-device.messages.extend([
-    MessageGroup("drive", [
-        Message("fault",    MessageSeverity.ERROR,
-                desc="Drive fault — output disabled"),
-        Message("overtemp", MessageSeverity.WARNING,
-                desc="Motor temperature above safe operating limit"),
-    ]),
-    MessageGroup("comms", [
-        Message("timeout", MessageSeverity.ERROR,
-                desc="Host communication watchdog expired"),
-    ]),
-])
+drive_msgs = MessageGroup("drive")
+drive_msgs.add(Message(
+    "fault",
+    MessageSeverity.ERROR,
+    desc="Drive fault — output disabled",
+)).add(Message(
+    "overtemp",
+    MessageSeverity.WARNING,
+    desc="Motor temperature above safe operating limit",
+))
+
+comms_msgs = MessageGroup("comms")
+comms_msgs.add(Message(
+    "timeout",
+    MessageSeverity.ERROR,
+    desc="Host communication watchdog expired",
+))
+
+device.messages.extend([drive_msgs, comms_msgs])
 
 # ---------------------------------------------------------------------------
 # Generate

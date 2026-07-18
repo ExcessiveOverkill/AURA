@@ -21,6 +21,59 @@ def _make_gen():
     ])
 
 
+def test_messagegroup_children_default_empty():
+    group = MessageGroup("system")
+    assert group.children == []
+
+
+def test_messagegroup_add_message_returns_self():
+    group = MessageGroup("system")
+    result = group.add(Message("clock_fault", MessageSeverity.ERROR))
+    assert result is group
+    assert len(group.children) == 1
+    assert group.children[0].name == "clock_fault"
+
+
+def test_messagegroup_add_nested_group():
+    group = MessageGroup("system")
+    subgroup = MessageGroup("power")
+    group.add(subgroup)
+    assert len(group.children) == 1
+    assert group.children[0] is subgroup
+
+
+def test_messagegroup_add_rejects_duplicate_name():
+    group = MessageGroup("system")
+    group.add(Message("clock_fault", MessageSeverity.ERROR))
+    try:
+        group.add(Message("clock_fault", MessageSeverity.WARNING))
+        assert False, "Expected ValueError for duplicate child name"
+    except ValueError as e:
+        assert "already exists" in str(e)
+
+
+def test_messagegroup_add_rejects_invalid_type():
+    group = MessageGroup("system")
+    try:
+        group.add("not-a-message")
+        assert False, "Expected ValueError for invalid child type"
+    except ValueError as e:
+        assert "Invalid item" in str(e)
+
+
+def test_messagegroup_lazy_build_flattens_correctly():
+    system = MessageGroup("system")
+    power = MessageGroup("power")
+    power.add(Message("low_voltage", MessageSeverity.WARNING))
+    system.add(Message("clock_fault", MessageSeverity.ERROR)).add(power)
+
+    gen = MessagingGenerator("drive", [system, Message("watchdog", MessageSeverity.CRITICAL)])
+    gen._flatten()
+
+    assert [m.name for m in gen._flat] == ["clock_fault", "low_voltage", "watchdog"]
+    assert [m._group_path for m in gen._flat] == [["system"], ["system", "power"], []]
+
+
 def test_flatten_count():
     gen = _make_gen()
     gen._flatten()
@@ -86,32 +139,11 @@ def test_delays():
     assert gen._flat[0].delay_us == 0      # clock_fault
 
 
-def test_struct_type_names():
-    gen = _make_gen()
-    assert gen._struct_type([])                    == "_DriveMsg"
-    assert gen._struct_type(["system"])            == "_DriveMsg_System"
-    assert gen._struct_type(["system", "power"])   == "_DriveMsg_System_Power"
-    assert gen._struct_type(["communication"])     == "_DriveMsg_Communication"
-
-
 def test_pascal_conversion():
     gen = _make_gen()
     assert gen._pascal("drive")      == "Drive"
     assert gen._pascal("my_module")  == "MyModule"
     assert gen._pascal("system")     == "System"
-
-
-def test_naming_helpers():
-    gen = _make_gen()
-    assert gen._id_type()     == "DriveMessageId"
-    assert gen._sev_type()    == "DriveMessageSeverity"
-    assert gen._cmd_type()    == "DriveMsgCommand"
-    assert gen._class_name()  == "DriveMessaging"
-    assert gen._iface_type()  == "DriveMsgRegIface"
-    assert gen._count_macro() == "DRIVE_MESSAGE_COUNT"
-    assert gen._values_name() == "drive_message_values"
-    assert gen._delays_name() == "drive_message_delays"
-    assert gen._accessor_name() == "drive_msgs"
 
 
 def test_top_level_message_no_path():

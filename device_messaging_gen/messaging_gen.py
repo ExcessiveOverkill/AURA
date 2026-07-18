@@ -18,15 +18,17 @@ Takes a list of Message and MessageGroup definitions and emits four C++ files:
 Usage:
     from device_messaging_gen import Message, MessageGroup, MessageSeverity, MessagingGenerator
 
+    system = MessageGroup("system")
+    system.add(Message("clock_fault", MessageSeverity.ERROR, desc="Clock failure"))
+
+    power = MessageGroup("power")
+    power.add(Message("low_voltage", MessageSeverity.WARNING, delay_us=5000))
+    system.add(power)
+
     gen = MessagingGenerator(
         module_name="drive",
         messages=[
-            MessageGroup("system", [
-                Message("clock_fault",  MessageSeverity.ERROR,   desc="Clock failure"),
-                MessageGroup("power", [
-                    Message("low_voltage", MessageSeverity.WARNING, delay_us=5000),
-                ]),
-            ]),
+            system,
             Message("watchdog", MessageSeverity.CRITICAL, desc="Watchdog timeout"),
         ]
     )
@@ -42,8 +44,8 @@ Usage:
         ], count=3)
 
     Generates MOTOR_0__FAULT, MOTOR_1__FAULT, MOTOR_2__FAULT in the enum and
-    a static constexpr _DriveMsg_Motor motor[3] = {...} accessor in the root
-    struct, accessible as drive_msgs.motor[i].fault.
+    a static constexpr _Msg_Motor motor[3] = {...} accessor in the root
+    struct, accessible as msgs.motor[i].fault.
 """
 
 import copy
@@ -85,8 +87,19 @@ class Message:
 @dataclass
 class MessageGroup:
     name: str
-    children: list  # list[Union[MessageGroup, Message]]
+    children: list[Union["MessageGroup", Message]] = field(default_factory=list)
     count: int = 1  # > 1 creates an instanced group
+
+    def add(self, item: Union["MessageGroup", Message]) -> "MessageGroup":
+        """Add a Message or nested MessageGroup and return self for chaining."""
+        if not isinstance(item, (MessageGroup, Message)):
+            raise ValueError("Invalid item. Expected Message or MessageGroup")
+        if any(child.name == item.name for child in self.children):
+            raise ValueError(
+                f"Item name '{item.name}' already exists in group '{self.name}'"
+            )
+        self.children.append(item)
+        return self
 
 
 # ---------------------------------------------------------------------------

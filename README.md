@@ -28,9 +28,9 @@ motor.add(Register("torque",  rw="rw", type="float"))
 device.regmap.add(motor)
 
 # Optional: messages/logging
-device.messages.append(MessageGroup("faults", [
-    Message("overcurrent", MessageSeverity.ERROR, desc="Phase current exceeded limit"),
-]))
+faults = MessageGroup("faults")
+faults.add(Message("overcurrent", MessageSeverity.ERROR, desc="Phase current exceeded limit"))
+device.messages.append(faults)
 
 device.generate("generated/my_device")
 ```
