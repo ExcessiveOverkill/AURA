@@ -8,6 +8,12 @@ Generate C++ firmware register maps and messaging systems from Python definition
 pip install git+https://github.com/ExcessiveOverkill/AURA.git
 ```
 
+#### Upgrade
+
+```bash
+pip install --upgrade --force-reinstall --no-cache-dir git+https://github.com/ExcessiveOverkill/AURA.git
+```
+
 ## Usage
 
 Create a `config.py` in your project:
