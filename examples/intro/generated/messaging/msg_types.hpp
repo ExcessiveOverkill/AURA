@@ -92,13 +92,32 @@ int8_t      group_parent(int8_t group_idx);
 // Access message IDs via dot notation at zero runtime cost.
 // Example: msgs.system.power.low_voltage
 
+struct _Msg_Drive_View {
+    MessageId base_msg_id;
+    MessageId fault() const { return MessageId(base_msg_id + 0); }
+    MessageId overtemp() const { return MessageId(base_msg_id + 1); }
+};
+
+struct _Msg_Comms_View {
+    MessageId base_msg_id;
+    MessageId timeout() const { return MessageId(base_msg_id + 0); }
+};
+
 struct _Msg_Drive {
     static constexpr MessageId fault = MessageId(0);
     static constexpr MessageId overtemp = MessageId(1);
+
+    _Msg_Drive_View operator[](uint8_t idx) const {
+        return _Msg_Drive_View{.base_msg_id = 0 + idx * 2};
+    }
 };
 
 struct _Msg_Comms {
     static constexpr MessageId timeout = MessageId(2);
+
+    _Msg_Comms_View operator[](uint8_t idx) const {
+        return _Msg_Comms_View{.base_msg_id = 2 + idx * 1};
+    }
 };
 
 struct _Msg {

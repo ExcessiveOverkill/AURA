@@ -116,6 +116,7 @@ class MessagingGenerator:
         self._unique_count: int = 0
         self._has_instanced_groups: bool = False
         self._instanced_groups: list = []   # metadata for instanced groups
+        self._group_metadata: dict = {}     # tuple(path) -> {base_id, child_count, stride}
 
     # ------------------------------------------------------------------
     # Naming helpers
@@ -207,6 +208,7 @@ class MessagingGenerator:
         self._group_path_to_idx = {}
         self._has_instanced_groups = False
         self._instanced_groups = []
+        self._group_metadata = {}
         self._flatten_items(self.messages, [])
         self._unique_count = sum(1 for m in self._flat if m._string_id == m._id)
 
@@ -232,6 +234,15 @@ class MessagingGenerator:
                     stride = len(self._flat) - base
                     canonical_ids = [m._id for m in self._flat[base:base + stride]]
 
+                    # Track group metadata for operator[]
+                    child_count = sum(1 for child in item.children if isinstance(child, Message))
+                    self._group_metadata[tuple(path + [item.name])] = {
+                        "base_id": canonical_ids[0] if canonical_ids else 0,
+                        "child_count": child_count,
+                        "stride": stride,
+                        "count": item.count,
+                    }
+
                     self._instanced_groups.append({
                         "name":          item.name,
                         "count":         item.count,
@@ -251,11 +262,21 @@ class MessagingGenerator:
                             [0],
                         )
                 else:
+                    # Non-instanced group: track metadata before recursing
+                    base_before = len(self._flat)
                     self._flatten_items(
                         item.children,
                         path + [item.name],
                         canonical_path + [item.name],
                     )
+                    base_after = len(self._flat)
+                    child_count = sum(1 for child in item.children if isinstance(child, Message))
+                    self._group_metadata[tuple(canonical_path + [item.name])] = {
+                        "base_id": base_before if base_after > base_before else 0,
+                        "child_count": child_count,
+                        "stride": base_after - base_before,
+                        "count": 1,
+                    }
             else:
                 item._id = len(self._flat)
                 item._string_id = item._id
@@ -341,8 +362,53 @@ class MessagingGenerator:
                                 f"static constexpr {self._id_type()} "
                                 f"{child.name} = {self._id_type()}({child._id});"
                             )
+                
+                # Emit operator[] for runtime indexing (all groups, uniform interface)
+                if not (instanced or is_inst):
+                    w.blank()
+                    view_type = self._struct_type(child_path) + "_View"
+                    metadata = self._group_metadata.get(tuple(child_path), {})
+                    base_id = metadata.get("base_id", 0)
+                    stride = metadata.get("stride", 0)
+                    
+                    w.line(f"{view_type} operator[](uint8_t idx) const {{")
+                    w.indent()
+                    w.line(f"return {view_type}{{.base_msg_id = {base_id} + idx * {stride}}};")
+                    w.dedent()
+                    w.line("}")
+
+                
                 w.close_struct()
                 w.blank()
+
+    def _emit_group_view_structs(self, w: CppWriter, items: list, path: list):
+        """Emit view structs for runtime group indexing (pre-order traversal)."""
+        for item in items:
+            if isinstance(item, MessageGroup):
+                child_path = path + [item.name]
+                view_type = self._struct_type(child_path) + "_View"
+                
+                # Emit view struct
+                w.open_struct(view_type)
+                w.line(f"{self._id_type()} base_msg_id;")
+                
+                # Emit accessor methods for each direct Message child
+                for child in item.children:
+                    if isinstance(child, Message):
+                        # Find child index in flattened list
+                        child_idx = 0
+                        for idx, c in enumerate(item.children):
+                            if isinstance(c, Message) and c is child:
+                                break
+                            if isinstance(c, Message):
+                                child_idx += 1
+                        w.line(f"{self._id_type()} {child.name}() const {{ return {self._id_type()}(base_msg_id + {child_idx}); }}")
+                
+                w.close_struct()
+                w.blank()
+                
+                # Recurse into nested groups
+                self._emit_group_view_structs(w, item.children, child_path)
 
     def _emit_root_struct(self, w: CppWriter):
         root_type = self._struct_type([])
@@ -528,6 +594,10 @@ class MessagingGenerator:
             else:
                 w.comment(f"Example: {self._accessor_name()}.system.power.low_voltage")
             w.blank()
+            
+            # Emit view structs for runtime indexing
+            self._emit_group_view_structs(w, self.messages, [])
+            
             self._emit_group_structs(w, self.messages, [])
             self._emit_root_struct(w)
 
