@@ -38,7 +38,7 @@ faults = MessageGroup("faults")
 faults.add(Message("overcurrent", MessageSeverity.ERROR, desc="Phase current exceeded limit"))
 device.messages.append(faults)
 
-device.generate("generated/my_device")
+device.generate("generated/")
 ```
 
 Run it:
@@ -50,7 +50,7 @@ python config.py
 This produces `generated/my_device/` containing:
 - `registers/` — C++ register structs, accessors, and binary comm interface
 - `messaging/` — C++ message enums and logging class (if messages defined)
-- `my_device_aura.hpp` — single master include
+- `aura.hpp` — single master include
 - `docs/` — markdown register map and message tables
 
 See `examples/` for complete working examples.
