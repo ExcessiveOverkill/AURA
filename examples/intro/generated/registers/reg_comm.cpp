@@ -3,11 +3,11 @@
  * comm interface implementation: address table, multi-word buffers, reg_read / reg_write / reg_reset
  */
 
-#include "intro_reg_comm.hpp"
-#include "intro_reg_storage.hpp"
+#include "reg_comm.hpp"
+#include "reg_storage.hpp"
 #include <cstring>
 
-namespace intro_regs {
+namespace regs {
 
     // --- Multi-word register buffers -----------------------------
     static word_t basic_u32_rw_rbuf[4];
@@ -274,24 +274,24 @@ namespace intro_regs {
         }
         else if (slot.word_idx == 0 && count == info.valid_words) {
             // Full register read — copy directly from storage under critical section.
-            INTRO_REG_ENTER_CRITICAL();
+            REG_ENTER_CRITICAL();
             memcpy(out, info.storage, info.valid_words * sizeof(word_t));
-            INTRO_REG_EXIT_CRITICAL();
+            REG_EXIT_CRITICAL();
             return RegStatus::OK;
         }
         else {
             // Partial read — hardware atomic (no buffer) or snapshot path.
             if (info.read_buf == nullptr) {
                 // No software buffer: hardware atomicity covers this register width.
-                INTRO_REG_ENTER_CRITICAL();
+                REG_ENTER_CRITICAL();
                 memcpy(out, &info.storage[slot.word_idx], count * sizeof(word_t));
-                INTRO_REG_EXIT_CRITICAL();
+                REG_EXIT_CRITICAL();
                 return RegStatus::OK;
             }
             if (slot.word_idx == 0) {
-                INTRO_REG_ENTER_CRITICAL();
+                REG_ENTER_CRITICAL();
                 memcpy(info.read_buf, info.storage, info.valid_words * sizeof(word_t));
-                INTRO_REG_EXIT_CRITICAL();
+                REG_EXIT_CRITICAL();
             }
             memcpy(out, &info.read_buf[slot.word_idx], count * sizeof(word_t));
             if (slot.word_idx == 0) {
@@ -362,25 +362,25 @@ namespace intro_regs {
         }
         else if (slot.word_idx == 0 && count == info.valid_words) {
             // Full register write — commit directly to storage under critical section.
-            INTRO_REG_ENTER_CRITICAL();
+            REG_ENTER_CRITICAL();
             memcpy(info.storage, data, info.valid_words * sizeof(word_t));
-            INTRO_REG_EXIT_CRITICAL();
+            REG_EXIT_CRITICAL();
             return RegStatus::OK;
         }
         else {
             // Partial write — hardware atomic (no buffer) or staged path.
             if (info.write_buf == nullptr) {
                 // No software buffer: write directly; hardware atomicity covers this register width.
-                INTRO_REG_ENTER_CRITICAL();
+                REG_ENTER_CRITICAL();
                 memcpy(&info.storage[slot.word_idx], data, count * sizeof(word_t));
-                INTRO_REG_EXIT_CRITICAL();
+                REG_EXIT_CRITICAL();
                 return RegStatus::OK;
             }
             memcpy(&info.write_buf[slot.word_idx], data, count * sizeof(word_t));
             if (slot.word_idx + count == info.valid_words) {
-                INTRO_REG_ENTER_CRITICAL();
+                REG_ENTER_CRITICAL();
                 memcpy(info.storage, info.write_buf, info.valid_words * sizeof(word_t));
-                INTRO_REG_EXIT_CRITICAL();
+                REG_EXIT_CRITICAL();
             }
         }
 
@@ -405,4 +405,4 @@ namespace intro_regs {
         }
     }
 
-} // namespace intro_regs
+} // namespace regs

@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "intro_reg_types.hpp"
+#include "reg_types.hpp"
 
-namespace intro_regs {
+namespace regs {
 
     // --- Register and group struct types -------------------------
     // basic_u32_rw — unsigned 32-bit | read-write
@@ -179,4 +179,4 @@ namespace intro_regs {
     // Defined in _reg_storage.cpp, zero-initialised at startup.
     extern RegMap_t regs;
 
-} // namespace intro_regs
+} // namespace regs

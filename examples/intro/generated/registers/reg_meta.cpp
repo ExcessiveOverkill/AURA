@@ -3,10 +3,10 @@
  * ROM metadata blob — serves host-side register enumeration via CMD_META_READ
  */
 
-#include "intro_reg_meta.hpp"
+#include "reg_meta.hpp"
 #include <cstring>
 
-namespace intro_regs {
+namespace regs {
 
     // --- Metadata byte stream (ROM) ------------------------------
     static const uint8_t _meta_blob[REG_META_SIZE] = {
@@ -149,4 +149,4 @@ namespace intro_regs {
         return 0u;
     }
 
-} // namespace intro_regs
+} // namespace regs

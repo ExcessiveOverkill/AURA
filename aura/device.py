@@ -102,7 +102,7 @@ class AURADevice:
 
         # Registers
         self.regmap.generate()
-        self.regmap.exportJSON(str(reg_dir / f"{self.name}_regmap.json"))
+        self.regmap.exportJSON(str(reg_dir / "regmap.json"))
         FirmwareGenerator(self.regmap, interfaces=self.interfaces).generate(str(reg_dir))
 
         # Messaging (optional)
@@ -123,34 +123,34 @@ class AURADevice:
         print(f"  registers/ : {len(list(reg_dir.iterdir()))} files")
         if has_messages:
             print(f"  messaging/ : {len(list(msg_dir.iterdir()))} files")
-        print(f"  {self.name}_aura.hpp")
+        print(f"  aura.hpp")
         print(f"  docs/")
 
 
 def _write_master_include(out: Path, name: str, has_messages: bool, interfaces: frozenset = frozenset()) -> None:
     lines = [
-        f"// {name}_aura.hpp -- AURA generated master include -- do not edit",
+        f"// aura.hpp -- AURA generated master include -- do not edit",
         f"// Re-run config.py to regenerate.  Generated: {date.today()}",
         "#pragma once",
         "",
         "// Registers",
-        f'#include "registers/{name}_reg_types.hpp"',
-        f'#include "registers/{name}_reg_storage.hpp"',
-        f'#include "registers/{name}_reg_device.hpp"',
-        f'#include "registers/{name}_reg_comm.hpp"',
+        f'#include "registers/reg_types.hpp"',
+        f'#include "registers/reg_storage.hpp"',
+        f'#include "registers/reg_device.hpp"',
+        f'#include "registers/reg_comm.hpp"',
     ]
     if "shell" in interfaces:
         lines += [
-            f'#include "registers/{name}_reg_doc.hpp"',
-            f'#include "registers/{name}_reg_meta.hpp"',
+            f'#include "registers/reg_doc.hpp"',
+            f'#include "registers/reg_meta.hpp"',
         ]
     if has_messages:
         lines += [
             "",
             "// Messaging",
-            f'#include "messaging/{name}_msg_types.hpp"',
-            f'#include "messaging/{name}_msg.hpp"',
+            f'#include "messaging/msg_types.hpp"',
+            f'#include "messaging/msg.hpp"',
         ]
     lines.append("")
 
-    (out / f"{name}_aura.hpp").write_text("\n".join(lines), encoding="utf-8")
+    (out / "aura.hpp").write_text("\n".join(lines), encoding="utf-8")

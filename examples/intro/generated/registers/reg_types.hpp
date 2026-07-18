@@ -8,23 +8,23 @@
 #include <cstdint>
 
 // --- Critical-section hooks (user-overridable) ---------------
-#ifndef INTRO_REG_ENTER_CRITICAL
-#  define INTRO_REG_ENTER_CRITICAL()
+#ifndef REG_ENTER_CRITICAL
+#  define REG_ENTER_CRITICAL()
 #endif
-#ifndef INTRO_REG_EXIT_CRITICAL
-#  define INTRO_REG_EXIT_CRITICAL()
+#ifndef REG_EXIT_CRITICAL
+#  define REG_EXIT_CRITICAL()
 #endif
 
 // --- Endianness ----------------------------------------------
 #if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
-#  define INTRO_REG_BIG_ENDIAN 1
+#  define REG_BIG_ENDIAN 1
 #elif defined(__BIG_ENDIAN__) || defined(__ARMEB__) || defined(__MIPSEB__)
-#  define INTRO_REG_BIG_ENDIAN 1
+#  define REG_BIG_ENDIAN 1
 #else
-#  define INTRO_REG_BIG_ENDIAN 0
+#  define REG_BIG_ENDIAN 0
 #endif
 
-namespace intro_regs {
+namespace regs {
 
     // --- Word type -----------------------------------------------
     // Smallest addressable unit: 8 bits.
@@ -59,4 +59,4 @@ namespace intro_regs {
         BLUE = 2
     };
 
-} // namespace intro_regs
+} // namespace regs

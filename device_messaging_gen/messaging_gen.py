@@ -120,57 +120,56 @@ class MessagingGenerator:
     def _struct_type(self, path: list) -> str:
         """Generate C++ struct type name for a group at the given path.
 
-        path=[]              -> _DriveMsg
-        path=["system"]      -> _DriveMsg_System
-        path=["system","power"] -> _DriveMsg_System_Power
+        path=[]              -> _Msg
+        path=["system"]      -> _Msg_System
+        path=["system","power"] -> _Msg_System_Power
         """
-        mod = self._pascal(self.module_name)
         if not path:
-            return f"_{mod}Msg"
+            return "_Msg"
         suffix = "".join(f"_{self._pascal(p)}" for p in path)
-        return f"_{mod}Msg{suffix}"
+        return f"_Msg{suffix}"
 
     def _id_type(self) -> str:
-        return self._pascal(self.module_name) + "MessageId"
+        return "MessageId"
 
     def _sev_type(self) -> str:
-        return self._pascal(self.module_name) + "MessageSeverity"
+        return "MessageSeverity"
 
     def _cmd_type(self) -> str:
-        return self._pascal(self.module_name) + "MsgCommand"
+        return "MsgCommand"
 
     def _class_name(self) -> str:
-        return self._pascal(self.module_name) + "Messaging"
+        return "Messaging"
 
     def _iface_type(self) -> str:
-        return self._pascal(self.module_name) + "MsgRegIface"
+        return "MsgRegIface"
 
     def _count_macro(self) -> str:
-        return self.module_name.upper() + "_MESSAGE_COUNT"
+        return "MESSAGE_COUNT"
 
     def _unique_count_macro(self) -> str:
-        return self.module_name.upper() + "_UNIQUE_MSG_COUNT"
+        return "UNIQUE_MSG_COUNT"
 
     def _values_name(self) -> str:
-        return self.module_name + "_message_values"
+        return "message_values"
 
     def _delays_name(self) -> str:
-        return self.module_name + "_message_delays"
+        return "message_delays"
 
     def _accessor_name(self) -> str:
-        return self.module_name + "_msgs"
+        return "msgs"
 
     def _group_node_type(self) -> str:
-        return self._pascal(self.module_name) + "GroupNode"
+        return "GroupNode"
 
     def _group_count_macro(self) -> str:
-        return self.module_name.upper() + "_GROUP_COUNT"
+        return "GROUP_COUNT"
 
     def _group_nodes_name(self) -> str:
-        return self.module_name + "_msg_group_nodes"
+        return "msg_group_nodes"
 
     def _group_idx_name(self) -> str:
-        return self.module_name + "_msg_group_idx"
+        return "msg_group_idx"
 
     # ------------------------------------------------------------------
     # Flatten pass
@@ -385,8 +384,7 @@ class MessagingGenerator:
     # ------------------------------------------------------------------
 
     def _emit_types(self, out: Path):
-        mod = self.module_name
-        fname = out / f"{mod}_msg_types.hpp"
+        fname = out / "msg_types.hpp"
         n = len(self._flat)
 
         with CppWriter(str(fname), is_header=True) as w:
@@ -473,14 +471,14 @@ class MessagingGenerator:
             w.blank()
 
             # String function declarations
-            w.separator("Flash-resident string accessors (defined in _msg_strings.cpp)")
+            w.separator("Flash-resident string accessors (defined in msg_strings.cpp)")
             id_t = self._id_type()
             sev_t = self._sev_type()
-            pf = f"{mod}_msg"
+            pf = "msg"
             w.line(f"const char* {pf}_get_name({id_t} id);")
             w.line(f"const char* {pf}_get_desc({id_t} id);")
             w.line(f"{sev_t} {pf}_get_severity({id_t} id);")
-            w.line(f"const char* {mod}_severity_label({sev_t} s);")
+            w.line(f"const char* severity_label({sev_t} s);")
             w.blank()
 
             # Group node tree
@@ -503,8 +501,8 @@ class MessagingGenerator:
             w.blank()
             if self._group_nodes:
                 w.line(f"int8_t      {pf}_get_group_idx({id_t} id);")
-                w.line(f"const char* {mod}_group_name(int8_t group_idx);")
-                w.line(f"int8_t      {mod}_group_parent(int8_t group_idx);")
+                w.line(f"const char* group_name(int8_t group_idx);")
+                w.line(f"int8_t      group_parent(int8_t group_idx);")
                 w.blank()
 
             # Compile-time ID accessor structs
@@ -525,8 +523,7 @@ class MessagingGenerator:
     # ------------------------------------------------------------------
 
     def _emit_strings(self, out: Path):
-        mod = self.module_name
-        fname = out / f"{mod}_msg_strings.cpp"
+        fname = out / "msg_strings.cpp"
 
         # Build unique-message list and string-id lookup table (instanced case only)
         unique_msgs = [m for m in self._flat if m._string_id == m._id]
@@ -534,7 +531,7 @@ class MessagingGenerator:
 
         with CppWriter(str(fname)) as w:
             w.generated_header("Flash-resident message string tables and accessor functions.")
-            w.include(f"{mod}_msg_types.hpp")
+            w.include("msg_types.hpp")
             w.blank()
 
             # message_values[] — full size, severity packed in bits 28-31
@@ -568,12 +565,12 @@ class MessagingGenerator:
 
             if self._has_instanced_groups:
                 sz = self._unique_count_macro()
-                name_arr = f"_{mod}_msg_names"
-                desc_arr = f"_{mod}_msg_descs"
+                name_arr = "_msg_names"
+                desc_arr = "_msg_descs"
 
                 # String-id indirection array (maps full id -> unique table index)
                 w.line(
-                    f"static const uint8_t _{mod}_msg_string_id[{self._count_macro()}] = {{"
+                    f"static const uint8_t _msg_string_id[{self._count_macro()}] = {{"
                 )
                 w.indent()
                 for msg in self._flat:
@@ -601,8 +598,8 @@ class MessagingGenerator:
                 w.line("};")
                 w.blank()
             else:
-                name_arr = f"_{mod}_msg_names"
-                desc_arr = f"_{mod}_msg_descs"
+                name_arr = "_msg_names"
+                desc_arr = "_msg_descs"
 
                 w.line(f"static const char* const {name_arr}[{self._count_macro()}] = {{")
                 w.indent()
@@ -620,7 +617,7 @@ class MessagingGenerator:
                 w.line("};")
                 w.blank()
 
-            w.line(f"static const char* const _{mod}_severity_labels[] = {{")
+            w.line(f"static const char* const _severity_labels[] = {{")
             w.indent()
             for label in ["none", "message", "warning", "error", "critical"]:
                 w.line(f'"{label}",')
@@ -653,10 +650,10 @@ class MessagingGenerator:
             w.separator("Accessor function implementations")
             id_t = self._id_type()
             sev_t = self._sev_type()
-            pf = f"{mod}_msg"
+            pf = "msg"
 
             if self._has_instanced_groups:
-                sid = f"_{mod}_msg_string_id"
+                sid = "_msg_string_id"
                 for fn_name, array in [
                     (f"{pf}_get_name", name_arr),
                     (f"{pf}_get_desc", desc_arr),
@@ -680,8 +677,8 @@ class MessagingGenerator:
             w.close_function()
             w.blank()
 
-            w.open_function(f"const char* {mod}_severity_label({sev_t} s)")
-            w.line(f"return _{mod}_severity_labels[uint8_t(s)];")
+            w.open_function(f"const char* severity_label({sev_t} s)")
+            w.line(f"return _severity_labels[uint8_t(s)];")
             w.close_function()
             w.blank()
 
@@ -691,12 +688,12 @@ class MessagingGenerator:
                 w.close_function()
                 w.blank()
 
-                w.open_function(f"const char* {mod}_group_name(int8_t group_idx)")
+                w.open_function(f"const char* group_name(int8_t group_idx)")
                 w.line(f"return {self._group_nodes_name()}[group_idx].name;")
                 w.close_function()
                 w.blank()
 
-                w.open_function(f"int8_t {mod}_group_parent(int8_t group_idx)")
+                w.open_function(f"int8_t group_parent(int8_t group_idx)")
                 w.line(f"return {self._group_nodes_name()}[group_idx].parent;")
                 w.close_function()
 
@@ -706,8 +703,7 @@ class MessagingGenerator:
     # ------------------------------------------------------------------
 
     def _emit_header(self, out: Path):
-        mod = self.module_name
-        fname = out / f"{mod}_msg.hpp"
+        fname = out / "msg.hpp"
         cls = self._class_name()
         id_t = self._id_type()
         sev_t = self._sev_type()
@@ -716,7 +712,7 @@ class MessagingGenerator:
         with CppWriter(str(fname), is_header=True) as w:
             w.generated_header("Messaging class declaration.")
             w.pragma_once()
-            w.include(f"{mod}_msg_types.hpp")
+            w.include("msg_types.hpp")
             w.include("cstdint", system=True)
             w.blank()
 
@@ -789,8 +785,7 @@ class MessagingGenerator:
     # ------------------------------------------------------------------
 
     def _emit_impl(self, out: Path):
-        mod = self.module_name
-        fname = out / f"{mod}_msg.cpp"
+        fname = out / "msg.cpp"
         cls = self._class_name()
         id_t = self._id_type()
         sev_t = self._sev_type()
@@ -801,7 +796,7 @@ class MessagingGenerator:
 
         with CppWriter(str(fname)) as w:
             w.generated_header("Messaging class implementation.")
-            w.include(f"{mod}_msg.hpp")
+            w.include("msg.hpp")
             w.include("cstring", system=True)
             w.blank()
 

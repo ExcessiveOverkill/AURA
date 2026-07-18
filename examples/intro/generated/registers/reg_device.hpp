@@ -5,10 +5,10 @@
 
 #pragma once
 
-#include "intro_reg_storage.hpp"
+#include "reg_storage.hpp"
 #include <cstring>
 
-namespace intro_regs {
+namespace regs {
 
     // --- Register accessors --------------------------------------
     // basic_u32_rw — unsigned 32-bit | read-write
@@ -195,4 +195,4 @@ namespace intro_regs {
 
     // multiple_groups: count=4 — access via regs.multiple_groups[i]...
 
-} // namespace intro_regs
+} // namespace regs

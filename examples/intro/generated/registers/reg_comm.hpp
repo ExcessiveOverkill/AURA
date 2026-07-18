@@ -5,10 +5,10 @@
 
 #pragma once
 
-#include "intro_reg_types.hpp"
+#include "reg_types.hpp"
 #include <cstdint>
 
-namespace intro_regs {
+namespace regs {
 
     // --- Register type tag ---------------------------------------
     enum class RegType : uint8_t {
@@ -54,4 +54,4 @@ namespace intro_regs {
     // Zero all register storage and clear all pending write buffers.
     void reg_reset();
 
-} // namespace intro_regs
+} // namespace regs

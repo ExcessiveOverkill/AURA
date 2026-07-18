@@ -15,17 +15,17 @@
 #endif // MSG_GET_TIME_US
 
 // --- Constants -----------------------------------------------
-constexpr uint16_t INTRO_MESSAGE_COUNT = 3;
+constexpr uint16_t MESSAGE_COUNT = 3;
 
 // --- MessageId enum ------------------------------------------
-enum class IntroMessageId : uint16_t {
+enum class MessageId : uint16_t {
     DRIVE__FAULT = 0,
     DRIVE__OVERTEMP = 1,
     COMMS__TIMEOUT = 2
 };
 
 // --- MessageSeverity enum ------------------------------------
-enum class IntroMessageSeverity : uint8_t {
+enum class MessageSeverity : uint8_t {
     NONE = 0,
     MESSAGE = 1,
     WARNING = 2,
@@ -34,7 +34,7 @@ enum class IntroMessageSeverity : uint8_t {
 };
 
 // --- MsgCommand enum -----------------------------------------
-enum class IntroMsgCommand : uint16_t {
+enum class MsgCommand : uint16_t {
     NONE = 0,
     RESET_SELECTED_TIME = 1,
     RESET_SELECTED_PAYLOAD = 2,
@@ -48,12 +48,12 @@ enum class IntroMsgCommand : uint16_t {
 };
 
 // --- Message value/delay tables (defined in _msg_strings.cpp) 
-extern const uint32_t intro_message_values[INTRO_MESSAGE_COUNT];
-extern const uint32_t intro_message_delays[INTRO_MESSAGE_COUNT];
+extern const uint32_t message_values[MESSAGE_COUNT];
+extern const uint32_t message_delays[MESSAGE_COUNT];
 
 // --- Optional register interface struct ----------------------
 // Pass to set_register_interface() to enable host-accessible messaging.
-struct IntroMsgRegIface {
+struct MsgRegIface {
     uint16_t* count;
     uint16_t* active_severity;
     uint16_t* cmd;
@@ -65,45 +65,45 @@ struct IntroMsgRegIface {
     uint16_t* hit_count;
 };
 
-// --- Flash-resident string accessors (defined in _msg_strings.cpp) 
-const char* intro_msg_get_name(IntroMessageId id);
-const char* intro_msg_get_desc(IntroMessageId id);
-IntroMessageSeverity intro_msg_get_severity(IntroMessageId id);
-const char* intro_severity_label(IntroMessageSeverity s);
+// --- Flash-resident string accessors (defined in msg_strings.cpp) 
+const char* msg_get_name(MessageId id);
+const char* msg_get_desc(MessageId id);
+MessageSeverity msg_get_severity(MessageId id);
+const char* severity_label(MessageSeverity s);
 
 // --- Group node tree  (compressed hierarchy — one string per segment) 
 // Each node stores its segment name and parent index (-1 = root level).
 // Reconstruct full paths by walking parent links up to -1.
-constexpr int8_t INTRO_GROUP_COUNT = 2;
+constexpr int8_t GROUP_COUNT = 2;
 
-struct IntroGroupNode {
+struct GroupNode {
     const char* name;
     int8_t      parent;
 };
 
-extern const IntroGroupNode intro_msg_group_nodes[INTRO_GROUP_COUNT];
-extern const int8_t intro_msg_group_idx[INTRO_MESSAGE_COUNT];
+extern const GroupNode msg_group_nodes[GROUP_COUNT];
+extern const int8_t msg_group_idx[MESSAGE_COUNT];
 
-int8_t      intro_msg_get_group_idx(IntroMessageId id);
-const char* intro_group_name(int8_t group_idx);
-int8_t      intro_group_parent(int8_t group_idx);
+int8_t      msg_get_group_idx(MessageId id);
+const char* group_name(int8_t group_idx);
+int8_t      group_parent(int8_t group_idx);
 
 // --- Compile-time ID accessors — C++17 required --------------
 // Access message IDs via dot notation at zero runtime cost.
-// Example: intro_msgs.system.power.low_voltage
+// Example: msgs.system.power.low_voltage
 
-struct _IntroMsg_Drive {
-    static constexpr IntroMessageId fault = IntroMessageId(0);
-    static constexpr IntroMessageId overtemp = IntroMessageId(1);
+struct _Msg_Drive {
+    static constexpr MessageId fault = MessageId(0);
+    static constexpr MessageId overtemp = MessageId(1);
 };
 
-struct _IntroMsg_Comms {
-    static constexpr IntroMessageId timeout = IntroMessageId(2);
+struct _Msg_Comms {
+    static constexpr MessageId timeout = MessageId(2);
 };
 
-struct _IntroMsg {
-    static constexpr _IntroMsg_Drive drive{};
-    static constexpr _IntroMsg_Comms comms{};
+struct _Msg {
+    static constexpr _Msg_Drive drive{};
+    static constexpr _Msg_Comms comms{};
 };
 
-inline constexpr _IntroMsg intro_msgs{};
+inline constexpr _Msg msgs{};

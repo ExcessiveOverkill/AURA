@@ -406,7 +406,7 @@ class FirmwareGenerator:
         No other headers depend on this file, so it can be included anywhere
         without pulling in the full register layout.
         """
-        big_endian_macro = f"{self._prefix().upper()}_REG_BIG_ENDIAN"
+        big_endian_macro = "REG_BIG_ENDIAN"
 
         with CppWriter(self._filepath(output_dir, "reg_types.hpp"), is_header=True) as w:
             w.generated_header("word_t typedef, RegStatus/RegAccess enums, per-register enum classes")
@@ -421,8 +421,8 @@ class FirmwareGenerator:
             # (e.g. __disable_irq()/__enable_irq() on bare-metal ARM, or
             # taskENTER_CRITICAL()/taskEXIT_CRITICAL() on FreeRTOS).
             # They wrap only the snapshot/commit copies in reg_read/reg_write.
-            critical_enter = f"{self._prefix().upper()}_REG_ENTER_CRITICAL"
-            critical_exit  = f"{self._prefix().upper()}_REG_EXIT_CRITICAL"
+            critical_enter = "REG_ENTER_CRITICAL"
+            critical_exit  = "REG_EXIT_CRITICAL"
             w.separator("Critical-section hooks (user-overridable)")
             w.line(f"#ifndef {critical_enter}")
             w.line(f"#  define {critical_enter}()")
@@ -525,7 +525,7 @@ class FirmwareGenerator:
         with CppWriter(self._filepath(output_dir, "reg_storage.hpp"), is_header=True) as w:
             w.generated_header("device-side register storage — struct layout and extern regs declaration")
             w.pragma_once()
-            w.include(f"{self._prefix()}_reg_types.hpp")
+            w.include("reg_types.hpp")
             w.blank()
 
             w.open_namespace(self._ns())
@@ -569,7 +569,7 @@ class FirmwareGenerator:
         """
         with CppWriter(self._filepath(output_dir, "reg_storage.cpp"), is_header=False) as w:
             w.generated_header("register storage definitions — single owner of all register memory")
-            w.include(f"{self._prefix()}_reg_storage.hpp")
+            w.include("reg_storage.hpp")
             w.blank()
 
             w.open_namespace(self._ns())
@@ -592,7 +592,7 @@ class FirmwareGenerator:
         with CppWriter(self._filepath(output_dir, "reg_device.hpp"), is_header=True) as w:
             w.generated_header("inline device-side accessors — zero call overhead after optimisation")
             w.pragma_once()
-            w.include(f"{self._prefix()}_reg_storage.hpp")
+            w.include("reg_storage.hpp")
             w.include("cstring", system=True)
             w.blank()
 
@@ -873,7 +873,7 @@ class FirmwareGenerator:
         with CppWriter(self._filepath(output_dir, "reg_comm.hpp"), is_header=True) as w:
             w.generated_header("binary comm interface — address-based register read/write for protocol handlers")
             w.pragma_once()
-            w.include(f"{self._prefix()}_reg_types.hpp")
+            w.include("reg_types.hpp")
             w.include("cstdint", system=True)
             w.blank()
 
@@ -943,8 +943,8 @@ class FirmwareGenerator:
                 "comm interface implementation: address table, multi-word buffers, "
                 "reg_read / reg_write / reg_reset"
             )
-            w.include(f"{self._prefix()}_reg_comm.hpp")
-            w.include(f"{self._prefix()}_reg_storage.hpp")
+            w.include("reg_comm.hpp")
+            w.include("reg_storage.hpp")
             w.include("cstring", system=True)
             w.blank()
 
@@ -1114,8 +1114,8 @@ class FirmwareGenerator:
             # reg_read
             # ----------------------------------------------------------
             w.separator("reg_read")
-            ce = f"{self._prefix().upper()}_REG_ENTER_CRITICAL"
-            cx = f"{self._prefix().upper()}_REG_EXIT_CRITICAL"
+            ce = "REG_ENTER_CRITICAL"
+            cx = "REG_EXIT_CRITICAL"
             w.open_function("RegStatus reg_read(uint16_t address, word_t* out, uint16_t count)")
             w.line("if (address >= REG_TABLE_SIZE)")
             with w.indented():
@@ -1501,7 +1501,6 @@ class FirmwareGenerator:
         and from device startup/POST.  Uses REG_VERIFY_ASSERT which defaults to
         <cassert> but can be overridden per-platform.
         """
-        prefix = self._prefix()
         with CppWriter(self._filepath(output_dir, "reg_verify.cpp"), is_header=False) as w:
             w.generated_header("accessor functional verification — callable on host and device")
             w.separator("Assert hook — override for your platform before including this TU")
@@ -1510,12 +1509,12 @@ class FirmwareGenerator:
             w.line("#  define REG_VERIFY_ASSERT(x) assert(x)")
             w.line("#endif")
             w.blank()
-            w.include(f"{prefix}_reg_device.hpp")
-            w.include(f"{prefix}_reg_comm.hpp")
+            w.include("reg_device.hpp")
+            w.include("reg_comm.hpp")
             w.blank()
-            w.separator(f"{prefix}_reg_verify")
+            w.separator("reg_verify")
             w.comment("Returns 0 on success.  On host, REG_VERIFY_ASSERT aborts on first failure.")
-            w.open_function(f"int {prefix}_reg_verify()")
+            w.open_function("int reg_verify()")
             self._verify_accessor_nodes(w, self._device_tree, [])
             w.line("return 0;")
             w.close_function()
@@ -1534,7 +1533,6 @@ class FirmwareGenerator:
           CMD 0x01 = reg_read   CMD 0x02 = reg_write
           CMD 0x03 = reg_reset  CMD 0x04 = run accessor verify
         """
-        prefix    = self._prefix()
         word_bytes = self._word_width // 8
 
         with CppWriter(self._filepath(output_dir, "reg_host.cpp"), is_header=False) as w:
@@ -1546,9 +1544,9 @@ class FirmwareGenerator:
             w.line('#  error "reg_host.cpp is for host testing only — do not flash to device."')
             w.line("#endif")
             w.blank()
-            w.include(f"{prefix}_reg_comm.hpp")
-            w.include(f"{prefix}_reg_storage.hpp")
-            w.include(f"{prefix}_reg_meta.hpp")
+            w.include("reg_comm.hpp")
+            w.include("reg_storage.hpp")
+            w.include("reg_meta.hpp")
             w.include("cstdio",   system=True)
             w.include("cstdint",  system=True)
             w.include("cstdlib",  system=True)
@@ -1568,7 +1566,7 @@ class FirmwareGenerator:
             w.line("static constexpr uint8_t CMD_META_READ = 0x05;")
             w.blank()
             w.separator("Forward declaration — defined in reg_verify.cpp")
-            w.line(f"int {prefix}_reg_verify();")
+            w.line("int reg_verify();")
             w.blank()
             w.separator("I/O helpers")
             w.open_function("static bool rd(void* buf, size_t n)")
@@ -1613,7 +1611,7 @@ class FirmwareGenerator:
             w.dedent()
             w.close_brace(" else if (cmd == CMD_VERIFY) {")
             w.indent()
-            w.line(f"int r = {prefix}_reg_verify();")
+            w.line(f"int r = reg_verify();")
             w.line("uint8_t s = (r == 0) ? 0u : 0xFFu; wr(&s, 1);")
             w.dedent()
             w.close_brace(" else if (cmd == CMD_META_READ) {")
@@ -1992,44 +1990,42 @@ class FirmwareGenerator:
         Also declares make_shell_config() which wires up the module's comm
         functions and doc tables into a RegShellConfig.
         """
-        p   = self._prefix()
-        P   = p.upper()
         ns  = self._ns()
         group_nodes, doc_entries, bf_entries, enum_entries = self._build_doc_data()
 
         with CppWriter(self._filepath(output_dir, "reg_doc.hpp"), is_header=True) as w:
             w.generated_header("ROM register metadata — doc structs and accessor API for the shell")
             w.pragma_once()
-            w.include(f"{p}_reg_comm.hpp")
+            w.include("reg_comm.hpp")
             w.include("reg_doc_types.hpp")
             w.blank()
 
             w.separator("Table-size constants")
-            w.line(f"constexpr uint16_t {P}_REG_DOC_COUNT       = {len(doc_entries)};")
-            w.line(f"constexpr uint8_t  {P}_REG_DOC_GROUP_COUNT = {len(group_nodes)};")
-            w.line(f"constexpr uint8_t  {P}_REG_DOC_BF_COUNT    = {len(bf_entries)};")
-            w.line(f"constexpr uint16_t {P}_REG_DOC_ENUM_COUNT  = {len(enum_entries)};")
+            w.line(f"constexpr uint16_t REG_DOC_COUNT       = {len(doc_entries)};")
+            w.line(f"constexpr uint8_t  REG_DOC_GROUP_COUNT = {len(group_nodes)};")
+            w.line(f"constexpr uint8_t  REG_DOC_BF_COUNT    = {len(bf_entries)};")
+            w.line(f"constexpr uint16_t REG_DOC_ENUM_COUNT  = {len(enum_entries)};")
             w.blank()
 
             w.separator("ROM table declarations")
-            w.line(f"extern const RegDocEntry     {p}_reg_doc_entries[{P}_REG_DOC_COUNT];")
-            w.line(f"extern const RegDocGroupNode {p}_reg_doc_groups[{P}_REG_DOC_GROUP_COUNT];")
-            w.line(f"extern const RegDocBitField  {p}_reg_doc_bitfields[{P}_REG_DOC_BF_COUNT];")
-            w.line(f"extern const RegDocEnum      {p}_reg_doc_enums[{P}_REG_DOC_ENUM_COUNT];")
+            w.line(f"extern const RegDocEntry     reg_doc_entries[REG_DOC_COUNT];")
+            w.line(f"extern const RegDocGroupNode reg_doc_groups[REG_DOC_GROUP_COUNT];")
+            w.line(f"extern const RegDocBitField  reg_doc_bitfields[REG_DOC_BF_COUNT];")
+            w.line(f"extern const RegDocEnum      reg_doc_enums[REG_DOC_ENUM_COUNT];")
             w.blank()
 
             w.separator("Accessor functions")
             w.comment("O(n) linear scan — only called on debug/shell paths, not in hot loops.")
-            w.line(f"const RegDocEntry* {p}_reg_doc_by_addr(uint16_t addr);")
-            w.line(f"uint8_t            {p}_reg_doc_word_bytes();")
+            w.line(f"const RegDocEntry* reg_doc_by_addr(uint16_t addr);")
+            w.line(f"uint8_t            reg_doc_word_bytes();")
             w.blank()
 
             w.separator("Shell config factory")
             w.comment("Wires this module's comm functions and doc tables into a RegShellConfig.")
             w.comment("Include reg_shell.hpp before calling this.")
             w.line("struct RegShellConfig;")
-            w.line(f"RegShellConfig {p}_make_shell_config(void (*putc_fn)(char c),")
-            w.line(f"                                      const char* prompt = nullptr);")
+            w.line(f"RegShellConfig make_shell_config(void (*putc_fn)(char c),")
+            w.line(f"                                 const char* prompt = nullptr);")
             w.blank()
 
     # ------------------------------------------------------------------
@@ -2043,8 +2039,6 @@ class FirmwareGenerator:
         ROM string pointer arrays + struct tables + accessor implementations
         + make_shell_config() factory body.
         """
-        p  = self._prefix()
-        P  = p.upper()
         ns = self._ns()
         wt = self._word_type
         group_nodes, doc_entries, bf_entries, enum_entries = self._build_doc_data()
@@ -2058,8 +2052,8 @@ class FirmwareGenerator:
 
         with CppWriter(self._filepath(output_dir, "reg_doc.cpp"), is_header=False) as w:
             w.generated_header("ROM register metadata — string tables, struct tables, and accessors")
-            w.include(f"{p}_reg_doc.hpp")
-            w.include(f"{p}_reg_comm.hpp")
+            w.include("reg_doc.hpp")
+            w.include("reg_comm.hpp")
             w.include("reg_shell.hpp")
             w.include("cstring", system=True)
             w.blank()
@@ -2067,19 +2061,19 @@ class FirmwareGenerator:
             # --- String pointer arrays -----------------------------------
             if doc_entries:
                 w.separator("Register string tables (.rodata)")
-                w.line(f"static const char* const _reg_names[{P}_REG_DOC_COUNT] = {{")
+                w.line(f"static const char* const _reg_names[REG_DOC_COUNT] = {{")
                 with w.indented():
                     for e in doc_entries:
                         w.line(f"{c_str(e.name)},")
                 w.line("};")
                 w.blank()
-                w.line(f"static const char* const _reg_descs[{P}_REG_DOC_COUNT] = {{")
+                w.line(f"static const char* const _reg_descs[REG_DOC_COUNT] = {{")
                 with w.indented():
                     for e in doc_entries:
                         w.line(f"{c_str(e.desc)},")
                 w.line("};")
                 w.blank()
-                w.line(f"static const char* const _reg_units[{P}_REG_DOC_COUNT] = {{")
+                w.line(f"static const char* const _reg_units[REG_DOC_COUNT] = {{")
                 with w.indented():
                     for e in doc_entries:
                         w.line(f"{c_str(e.unit)},")
@@ -2088,13 +2082,13 @@ class FirmwareGenerator:
 
             if bf_entries:
                 w.separator("Bit-field string tables (.rodata)")
-                w.line(f"static const char* const _bf_names[{P}_REG_DOC_BF_COUNT] = {{")
+                w.line(f"static const char* const _bf_names[REG_DOC_BF_COUNT] = {{")
                 with w.indented():
                     for b in bf_entries:
                         w.line(f"{c_str(b.name)},")
                 w.line("};")
                 w.blank()
-                w.line(f"static const char* const _bf_descs[{P}_REG_DOC_BF_COUNT] = {{")
+                w.line(f"static const char* const _bf_descs[REG_DOC_BF_COUNT] = {{")
                 with w.indented():
                     for b in bf_entries:
                         w.line(f"{c_str(b.desc)},")
@@ -2103,7 +2097,7 @@ class FirmwareGenerator:
 
             if enum_entries:
                 w.separator("Enum name table (.rodata)")
-                w.line(f"static const char* const _enum_names[{P}_REG_DOC_ENUM_COUNT] = {{")
+                w.line(f"static const char* const _enum_names[REG_DOC_ENUM_COUNT] = {{")
                 with w.indented():
                     for e in enum_entries:
                         w.line(f"{c_str(e.name)},")
@@ -2112,7 +2106,7 @@ class FirmwareGenerator:
 
             if group_nodes:
                 w.separator("Group name table (.rodata)")
-                w.line(f"static const char* const _grp_names[{P}_REG_DOC_GROUP_COUNT] = {{")
+                w.line(f"static const char* const _grp_names[REG_DOC_GROUP_COUNT] = {{")
                 with w.indented():
                     for g in group_nodes:
                         w.line(f"{c_str(g.name)},")
@@ -2122,20 +2116,20 @@ class FirmwareGenerator:
             # --- Enum table ----------------------------------------------
             if enum_entries:
                 w.separator("Enum value table")
-                w.line(f"const RegDocEnum {p}_reg_doc_enums[{P}_REG_DOC_ENUM_COUNT] = {{")
+                w.line(f"const RegDocEnum reg_doc_enums[REG_DOC_ENUM_COUNT] = {{")
                 with w.indented():
                     for i, e in enumerate(enum_entries):
                         w.line(f"{{ _enum_names[{i}], {e.value}u }},")
                 w.line("};")
                 w.blank()
             else:
-                w.line(f"const RegDocEnum {p}_reg_doc_enums[1] = {{}};")
+                w.line(f"const RegDocEnum reg_doc_enums[REG_DOC_ENUM_COUNT] = {{}};")
                 w.blank()
 
             # --- Bit-field table -----------------------------------------
             if bf_entries:
                 w.separator("Bit-field table")
-                w.line(f"const RegDocBitField {p}_reg_doc_bitfields[{P}_REG_DOC_BF_COUNT] = {{")
+                w.line(f"const RegDocBitField reg_doc_bitfields[REG_DOC_BF_COUNT] = {{")
                 with w.indented():
                     for i, b in enumerate(bf_entries):
                         w.line(
@@ -2147,13 +2141,13 @@ class FirmwareGenerator:
                 w.line("};")
                 w.blank()
             else:
-                w.line(f"const RegDocBitField {p}_reg_doc_bitfields[1] = {{}};")
+                w.line(f"const RegDocBitField reg_doc_bitfields[REG_DOC_BF_COUNT] = {{}};")
                 w.blank()
 
             # --- Group node table ----------------------------------------
             if group_nodes:
                 w.separator("Group node table")
-                w.line(f"const RegDocGroupNode {p}_reg_doc_groups[{P}_REG_DOC_GROUP_COUNT] = {{")
+                w.line(f"const RegDocGroupNode reg_doc_groups[REG_DOC_GROUP_COUNT] = {{")
                 with w.indented():
                     for i, g in enumerate(group_nodes):
                         w.line(
@@ -2163,13 +2157,13 @@ class FirmwareGenerator:
                 w.line("};")
                 w.blank()
             else:
-                w.line(f"const RegDocGroupNode {p}_reg_doc_groups[1] = {{}};")
+                w.line(f"const RegDocGroupNode reg_doc_groups[REG_DOC_GROUP_COUNT] = {{}};")
                 w.blank()
 
             # --- Entry table ---------------------------------------------
             w.separator("Register entry table")
             if doc_entries:
-                w.line(f"const RegDocEntry {p}_reg_doc_entries[{P}_REG_DOC_COUNT] = {{")
+                w.line(f"const RegDocEntry reg_doc_entries[REG_DOC_COUNT] = {{")
                 with w.indented():
                     for i, e in enumerate(doc_entries):
                         hr = "true" if e.has_range else "false"
@@ -2184,32 +2178,32 @@ class FirmwareGenerator:
                         )
                 w.line("};")
             else:
-                w.line(f"const RegDocEntry {p}_reg_doc_entries[1] = {{}};")
+                w.line(f"const RegDocEntry reg_doc_entries[REG_DOC_COUNT] = {{}};")
             w.blank()
 
             # --- Accessor functions --------------------------------------
             w.separator("Accessor functions")
             w.comment("Returns the first entry whose base address covers `addr`.")
-            w.open_function(f"const RegDocEntry* {p}_reg_doc_by_addr(uint16_t addr)")
+            w.open_function(f"const RegDocEntry* reg_doc_by_addr(uint16_t addr)")
             if doc_entries:
-                w.open_brace(f"for (uint16_t i = 0; i < {P}_REG_DOC_COUNT; ++i)")
-                w.line(f"const RegDocEntry& e = {p}_reg_doc_entries[i];")
+                w.open_brace(f"for (uint16_t i = 0; i < REG_DOC_COUNT; ++i)")
+                w.line(f"const RegDocEntry& e = reg_doc_entries[i];")
                 w.line("uint16_t end = (uint16_t)(e.offset_in_group")
                 w.line("    + (e.group_node >= 0 ?")
-                w.line(f"       {p}_reg_doc_groups[e.group_node].base_address : 0u)")
+                w.line(f"       reg_doc_groups[e.group_node].base_address : 0u)")
                 w.line("    + e.bank_size * e.words_per_reg);")
                 w.line("uint16_t base = (uint16_t)(e.offset_in_group")
                 w.line("    + (e.group_node >= 0 ?")
-                w.line(f"       {p}_reg_doc_groups[e.group_node].base_address : 0u));")
+                w.line(f"       reg_doc_groups[e.group_node].base_address : 0u));")
                 w.open_brace("if (addr >= base && addr < end)")
-                w.line(f"return &{p}_reg_doc_entries[i];")
+                w.line(f"return &reg_doc_entries[i];")
                 w.close_brace()
                 w.close_brace()
             w.line("return nullptr;")
             w.close_function()
             w.blank()
 
-            w.open_function(f"uint8_t {p}_reg_doc_word_bytes()")
+            w.open_function(f"uint8_t reg_doc_word_bytes()")
             w.line(f"return static_cast<uint8_t>(sizeof({ns}::word_t));")
             w.close_function()
             w.blank()
@@ -2243,19 +2237,19 @@ class FirmwareGenerator:
             w.blank()
 
             w.open_function(
-                f"RegShellConfig {p}_make_shell_config("
+                f"RegShellConfig make_shell_config("
                 "void (*putc_fn)(char c), const char* prompt)"
             )
             w.line("RegShellConfig cfg;")
             w.line("cfg.reg_read  = _shell_read;")
             w.line("cfg.reg_write = _shell_write;")
             w.line(f"cfg.reg_reset = {ns}::reg_reset;")
-            w.line(f"cfg.entries     = {p}_reg_doc_entries;")
-            w.line(f"cfg.entry_count = {P}_REG_DOC_COUNT;")
-            w.line(f"cfg.groups      = {p}_reg_doc_groups;")
-            w.line(f"cfg.group_count = {P}_REG_DOC_GROUP_COUNT;")
-            w.line(f"cfg.bitfields   = {p}_reg_doc_bitfields;")
-            w.line(f"cfg.enums       = {p}_reg_doc_enums;")
+            w.line(f"cfg.entries     = reg_doc_entries;")
+            w.line(f"cfg.entry_count = REG_DOC_COUNT;")
+            w.line(f"cfg.groups      = reg_doc_groups;")
+            w.line(f"cfg.group_count = REG_DOC_GROUP_COUNT;")
+            w.line(f"cfg.bitfields   = reg_doc_bitfields;")
+            w.line(f"cfg.enums       = reg_doc_enums;")
             w.line(f"cfg.word_bytes  = {wb};")
             w.line("cfg.putc_fn     = putc_fn;")
             w.line("cfg.prompt      = prompt;")
@@ -2273,8 +2267,6 @@ class FirmwareGenerator:
         Declares the ROM metadata blob size and the meta_read() byte-stream
         accessor used by the binary protocol's CMD_META_READ command.
         """
-        p  = self._prefix()
-        P  = p.upper()
         ns = self._ns()
         blob = self._build_meta_blob()
 
@@ -2310,7 +2302,6 @@ class FirmwareGenerator:
         The binary metadata blob as a ROM byte array, plus the meta_read()
         implementation (trivial memcpy with bounds check).
         """
-        p   = self._prefix()
         ns  = self._ns()
         blob = self._build_meta_blob()
 
@@ -2318,7 +2309,7 @@ class FirmwareGenerator:
             w.generated_header(
                 "ROM metadata blob — serves host-side register enumeration via CMD_META_READ"
             )
-            w.include(f"{p}_reg_meta.hpp")
+            w.include("reg_meta.hpp")
             w.include("cstring", system=True)
             w.blank()
 
@@ -2429,14 +2420,10 @@ class FirmwareGenerator:
 
     def _ns(self) -> str:
         """C++ namespace that wraps all generated symbols."""
-        return f"{self._module_name}_regs"
-
-    def _prefix(self) -> str:
-        """File name prefix and C symbol prefix."""
-        return self._module_name
+        return "regs"
 
     def _filepath(self, output_dir: str, suffix: str) -> str:
-        return os.path.join(output_dir, f"{self._prefix()}_{suffix}")
+        return os.path.join(output_dir, suffix)
 
 
 # ---------------------------------------------------------------------------

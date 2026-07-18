@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-namespace intro_regs {
+namespace regs {
 
     constexpr uint16_t REG_META_SIZE = 2040u;
 
@@ -15,4 +15,4 @@ namespace intro_regs {
     // Returns 0 on success, 1 if offset + count > REG_META_SIZE.
     uint8_t meta_read(uint16_t offset, uint8_t* out, uint16_t count);
 
-} // namespace intro_regs
+} // namespace regs

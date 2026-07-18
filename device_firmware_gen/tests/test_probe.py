@@ -31,17 +31,16 @@ def _compile_host(compiler: str, rm, tmp_dir: str):
     os.makedirs(out_dir, exist_ok=True)
     gen.generate(out_dir)
 
-    prefix = gen._prefix()
-    binary = os.path.join(tmp_dir, prefix + "_test")
+    binary = os.path.join(tmp_dir, "reg_test")
     if os.name == "nt":
         binary += ".exe"
 
     srcs = [
-        os.path.join(out_dir, f"{prefix}_reg_storage.cpp"),
-        os.path.join(out_dir, f"{prefix}_reg_comm.cpp"),
-        os.path.join(out_dir, f"{prefix}_reg_verify.cpp"),
-        os.path.join(out_dir, f"{prefix}_reg_meta.cpp"),
-        os.path.join(out_dir, f"{prefix}_reg_host.cpp"),
+        os.path.join(out_dir, "reg_storage.cpp"),
+        os.path.join(out_dir, "reg_comm.cpp"),
+        os.path.join(out_dir, "reg_verify.cpp"),
+        os.path.join(out_dir, "reg_meta.cpp"),
+        os.path.join(out_dir, "reg_host.cpp"),
     ]
     result = subprocess.run(
         [compiler, "-std=c++17", "-DAURA_HOST_TEST", "-I", out_dir] + srcs + ["-o", binary],
@@ -835,8 +834,7 @@ class TestHostTestGuard:
         os.makedirs(out)
         gen = FirmwareGenerator(rm, interfaces="shell")
         gen.generate(out)
-        prefix = gen._prefix()
-        host_src = os.path.join(out, f"{prefix}_reg_host.cpp")
+        host_src = os.path.join(out, "reg_host.cpp")
 
         result = subprocess.run(
             [cc, "-std=c++17", "-c", "-I", out, host_src, "-o", os.devnull],

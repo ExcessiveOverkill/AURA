@@ -79,7 +79,7 @@ class TestFileCreation:
         FirmwareGenerator(simple_rm).generate(out_dir)
         files = set(os.listdir(out_dir))
         for suffix in self.CORE_SUFFIXES:
-            assert f"test_mod_{suffix}" in files
+            assert suffix in files
 
     def test_shell_creates_fifteen_files(self, simple_rm, out_dir):
         FirmwareGenerator(simple_rm, interfaces="shell").generate(out_dir)
@@ -89,7 +89,7 @@ class TestFileCreation:
         FirmwareGenerator(simple_rm, interfaces="shell").generate(out_dir)
         files = set(os.listdir(out_dir))
         for suffix in self.CORE_SUFFIXES + self.SHELL_SUFFIXES:
-            assert f"test_mod_{suffix}" in files
+            assert suffix in files
         for fname in self.SHELL_STATIC_FILES:
             assert fname in files
 
@@ -122,9 +122,9 @@ class TestErrors:
 class TestCorrectness:
     def test_namespace_in_types_header(self, simple_rm, out_dir):
         FirmwareGenerator(simple_rm).generate(out_dir)
-        path = os.path.join(out_dir, "test_mod_reg_types.hpp")
+        path = os.path.join(out_dir, "reg_types.hpp")
         content = open(path, encoding="utf-8").read()
-        assert "test_mod_regs" in content
+        assert "regs" in content
 
     def test_generate_from_json_smoke(self, json_rm, out_dir):
         FirmwareGenerator(json_rm).generate(out_dir)
@@ -141,11 +141,6 @@ class TestCorrectness:
             c1 = open(os.path.join(out1, fname), encoding="utf-8").read()
             c2 = open(os.path.join(out2, fname), encoding="utf-8").read()
             assert c1 == c2, f"Mismatch in {fname}"
-
-    def test_module_name_in_filenames(self, simple_rm, out_dir):
-        FirmwareGenerator(simple_rm).generate(out_dir)
-        for f in os.listdir(out_dir):
-            assert f.startswith("test_mod_")
 
     def test_complex_map_generates(self, tmp_path):
         rm = RegisterMapGenerator("complex_mod", [], word_width=32)
@@ -171,9 +166,9 @@ class TestCorrectness:
 # C++ compilation
 # ---------------------------------------------------------------------------
 
-def _compile(compiler, out_dir, module, tmp_path):
-    storage = os.path.join(out_dir, f"{module}_reg_storage.cpp")
-    comm = os.path.join(out_dir, f"{module}_reg_comm.cpp")
+def _compile(compiler, out_dir, tmp_path):
+    storage = os.path.join(out_dir, "reg_storage.cpp")
+    comm = os.path.join(out_dir, "reg_comm.cpp")
     result = subprocess.run(
         [compiler, "-std=c++17", "-c", "-I", out_dir, storage, comm],
         capture_output=True, text=True, cwd=str(tmp_path)
@@ -184,43 +179,42 @@ def _compile(compiler, out_dir, module, tmp_path):
 class TestCompilation:
     def test_simple_rm_compiles(self, simple_rm, out_dir, compiler, tmp_path):
         FirmwareGenerator(simple_rm).generate(out_dir)
-        r = _compile(compiler, out_dir, "test_mod", tmp_path)
+        r = _compile(compiler, out_dir, tmp_path)
         assert r.returncode == 0, r.stderr
 
     def test_banked_rm_compiles(self, banked_rm, out_dir, compiler, tmp_path):
         FirmwareGenerator(banked_rm).generate(out_dir)
-        r = _compile(compiler, out_dir, "bank_mod", tmp_path)
+        r = _compile(compiler, out_dir, tmp_path)
         assert r.returncode == 0, r.stderr
 
     def test_grouped_rm_compiles(self, grouped_rm, out_dir, compiler, tmp_path):
         FirmwareGenerator(grouped_rm).generate(out_dir)
-        r = _compile(compiler, out_dir, "group_mod", tmp_path)
+        r = _compile(compiler, out_dir, tmp_path)
         assert r.returncode == 0, r.stderr
 
     def test_multiword_rm_compiles(self, multiword_rm, out_dir, compiler, tmp_path):
         FirmwareGenerator(multiword_rm).generate(out_dir)
-        r = _compile(compiler, out_dir, "mw_mod", tmp_path)
+        r = _compile(compiler, out_dir, tmp_path)
         assert r.returncode == 0, r.stderr
 
     def test_enum_rm_compiles(self, enum_rm, out_dir, compiler, tmp_path):
         FirmwareGenerator(enum_rm).generate(out_dir)
-        r = _compile(compiler, out_dir, "enum_mod", tmp_path)
+        r = _compile(compiler, out_dir, tmp_path)
         assert r.returncode == 0, r.stderr
 
     def test_bitfield_rm_compiles(self, bitfield_rm, out_dir, compiler, tmp_path):
         FirmwareGenerator(bitfield_rm).generate(out_dir)
-        r = _compile(compiler, out_dir, "bf_mod", tmp_path)
+        r = _compile(compiler, out_dir, tmp_path)
         assert r.returncode == 0, r.stderr
 
     def test_json_rm_compiles(self, json_rm, out_dir, compiler, tmp_path):
         FirmwareGenerator(json_rm).generate(out_dir)
-        module = FirmwareGenerator(json_rm)._prefix()
-        r = _compile(compiler, out_dir, module, tmp_path)
+        r = _compile(compiler, out_dir, tmp_path)
         assert r.returncode == 0, r.stderr
 
     def test_min_access_rm_compiles(self, min_access_rm, out_dir, compiler, tmp_path):
         FirmwareGenerator(min_access_rm).generate(out_dir)
-        r = _compile(compiler, out_dir, "maw_mod", tmp_path)
+        r = _compile(compiler, out_dir, tmp_path)
         assert r.returncode == 0, r.stderr
 
 
@@ -250,8 +244,7 @@ def test_parametrized_compiles(case, tmp_path, compiler):
     os.makedirs(out)
     gen = FirmwareGenerator(rm)
     gen.generate(out)
-    module = gen._prefix()
-    r = _compile(compiler, out, module, tmp_path)
+    r = _compile(compiler, out, tmp_path)
     assert r.returncode == 0, (
         f"Compilation failed for {_case_id(case)}:\n{r.stderr}"
     )

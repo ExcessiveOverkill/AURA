@@ -7,9 +7,9 @@
 #  error "reg_host.cpp is for host testing only — do not flash to device."
 #endif
 
-#include "intro_reg_comm.hpp"
-#include "intro_reg_storage.hpp"
-#include "intro_reg_meta.hpp"
+#include "reg_comm.hpp"
+#include "reg_storage.hpp"
+#include "reg_meta.hpp"
 #include <cstdio>
 #include <cstdint>
 #include <cstdlib>
@@ -29,7 +29,7 @@ static constexpr uint8_t CMD_VERIFY    = 0x04;
 static constexpr uint8_t CMD_META_READ = 0x05;
 
 // --- Forward declaration — defined in reg_verify.cpp ---------
-int intro_reg_verify();
+int reg_verify();
 
 // --- I/O helpers ---------------------------------------------
 static bool rd(void* buf, size_t n) {
@@ -46,7 +46,7 @@ int main() {
         _setmode(_fileno(stdin),  _O_BINARY);
         _setmode(_fileno(stdout), _O_BINARY);
     #endif
-    intro_regs::reg_reset();
+    regs::reg_reset();
 
     uint8_t  cmd;
     uint16_t addr, count;
@@ -54,27 +54,27 @@ int main() {
         if (!rd(&addr, 2) || !rd(&count, 2)) break;
 
         if (cmd == CMD_READ) {
-            std::vector<intro_regs::word_t> out(count);
-            uint8_t s = static_cast<uint8_t>(intro_regs::reg_read(addr, out.data(), count));
+            std::vector<regs::word_t> out(count);
+            uint8_t s = static_cast<uint8_t>(regs::reg_read(addr, out.data(), count));
             wr(&s, 1);
             if (s <= 2) {
                 wr(out.data(), count * 1u);
             }
         } else if (cmd == CMD_WRITE) {
-            std::vector<intro_regs::word_t> data(count);
+            std::vector<regs::word_t> data(count);
             if (!rd(data.data(), count * 1u)) break;
-            uint8_t s = static_cast<uint8_t>(intro_regs::reg_write(addr, data.data(), count));
+            uint8_t s = static_cast<uint8_t>(regs::reg_write(addr, data.data(), count));
             wr(&s, 1);
     } else if (cmd == CMD_RESET) {
-        intro_regs::reg_reset();
+        regs::reg_reset();
         uint8_t s = 0; wr(&s, 1);
 } else if (cmd == CMD_VERIFY) {
-    int r = intro_reg_verify();
+    int r = reg_verify();
     uint8_t s = (r == 0) ? 0u : 0xFFu; wr(&s, 1);
 } else if (cmd == CMD_META_READ) {
     // addr field reused as byte offset; count field = byte count
     std::vector<uint8_t> meta_out(count);
-    uint8_t s = intro_regs::meta_read(addr, meta_out.data(), count);
+    uint8_t s = regs::meta_read(addr, meta_out.data(), count);
     wr(&s, 1);
     if (s == 0) {
         wr(meta_out.data(), count);

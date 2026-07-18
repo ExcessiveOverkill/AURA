@@ -3,13 +3,13 @@
  * ROM register metadata — string tables, struct tables, and accessors
  */
 
-#include "intro_reg_doc.hpp"
-#include "intro_reg_comm.hpp"
+#include "reg_doc.hpp"
+#include "reg_comm.hpp"
 #include "reg_shell.hpp"
 #include <cstring>
 
 // --- Register string tables (.rodata) ------------------------
-static const char* const _reg_names[INTRO_REG_DOC_COUNT] = {
+static const char* const _reg_names[REG_DOC_COUNT] = {
     "basic_u32_rw",
     "basic_u32_r",
     "u32_with_limits",
@@ -31,7 +31,7 @@ static const char* const _reg_names[INTRO_REG_DOC_COUNT] = {
     "reg2",
 };
 
-static const char* const _reg_descs[INTRO_REG_DOC_COUNT] = {
+static const char* const _reg_descs[REG_DOC_COUNT] = {
     "basic read/write uint32 register",
     "basic read-only uint32 register",
     "uint32 register with min/max/default values",
@@ -53,7 +53,7 @@ static const char* const _reg_descs[INTRO_REG_DOC_COUNT] = {
     "32-bit float register in group1",
 };
 
-static const char* const _reg_units[INTRO_REG_DOC_COUNT] = {
+static const char* const _reg_units[REG_DOC_COUNT] = {
     "",
     "",
     "",
@@ -76,27 +76,27 @@ static const char* const _reg_units[INTRO_REG_DOC_COUNT] = {
 };
 
 // --- Bit-field string tables (.rodata) -----------------------
-static const char* const _bf_names[INTRO_REG_DOC_BF_COUNT] = {
+static const char* const _bf_names[REG_DOC_BF_COUNT] = {
     "field1",
     "field2",
     "field3",
 };
 
-static const char* const _bf_descs[INTRO_REG_DOC_BF_COUNT] = {
+static const char* const _bf_descs[REG_DOC_BF_COUNT] = {
     "4-bit unsigned field starting at bit 0",
     "1-bit boolean field at bit 4",
     "3-bit unsigned field starting at bit 5",
 };
 
 // --- Enum name table (.rodata) -------------------------------
-static const char* const _enum_names[INTRO_REG_DOC_ENUM_COUNT] = {
+static const char* const _enum_names[REG_DOC_ENUM_COUNT] = {
     "RED",
     "GREEN",
     "BLUE",
 };
 
 // --- Group name table (.rodata) ------------------------------
-static const char* const _grp_names[INTRO_REG_DOC_GROUP_COUNT] = {
+static const char* const _grp_names[REG_DOC_GROUP_COUNT] = {
     "group1",
     "group2",
     "nested_group",
@@ -104,21 +104,21 @@ static const char* const _grp_names[INTRO_REG_DOC_GROUP_COUNT] = {
 };
 
 // --- Enum value table ----------------------------------------
-const RegDocEnum intro_reg_doc_enums[INTRO_REG_DOC_ENUM_COUNT] = {
+const RegDocEnum reg_doc_enums[REG_DOC_ENUM_COUNT] = {
     { _enum_names[0], 0u },
     { _enum_names[1], 1u },
     { _enum_names[2], 2u },
 };
 
 // --- Bit-field table -----------------------------------------
-const RegDocBitField intro_reg_doc_bitfields[INTRO_REG_DOC_BF_COUNT] = {
+const RegDocBitField reg_doc_bitfields[REG_DOC_BF_COUNT] = {
     { _bf_names[0], _bf_descs[0], 0, 4, RegDocType::UNSIGNED, 2, 3, 0 },
     { _bf_names[1], _bf_descs[1], 4, 1, RegDocType::BOOL, 2, 3, 0 },
     { _bf_names[2], _bf_descs[2], 5, 3, RegDocType::UNSIGNED, 2, 3, 0 },
 };
 
 // --- Group node table ----------------------------------------
-const RegDocGroupNode intro_reg_doc_groups[INTRO_REG_DOC_GROUP_COUNT] = {
+const RegDocGroupNode reg_doc_groups[REG_DOC_GROUP_COUNT] = {
     { _grp_names[0], -1, 1, 80u, 8u },
     { _grp_names[1], -1, 1, 15u, 1u },
     { _grp_names[2], 1, 1, 15u, 1u },
@@ -126,7 +126,7 @@ const RegDocGroupNode intro_reg_doc_groups[INTRO_REG_DOC_GROUP_COUNT] = {
 };
 
 // --- Register entry table ------------------------------------
-const RegDocEntry intro_reg_doc_entries[INTRO_REG_DOC_COUNT] = {
+const RegDocEntry reg_doc_entries[REG_DOC_COUNT] = {
     { _reg_names[0], _reg_descs[0], _reg_units[0], RegDocType::UNSIGNED, 2, 32, 4, 1, false, 0u, 0u, -1, 0u, 0, 0, 0, 0 },
     { _reg_names[1], _reg_descs[1], _reg_units[1], RegDocType::UNSIGNED, 0, 32, 4, 1, false, 0u, 0u, -1, 4u, 0, 0, 0, 0 },
     { _reg_names[2], _reg_descs[2], _reg_units[2], RegDocType::UNSIGNED, 2, 32, 4, 1, true, 0u, 100u, -1, 8u, 0, 0, 0, 0 },
@@ -150,31 +150,31 @@ const RegDocEntry intro_reg_doc_entries[INTRO_REG_DOC_COUNT] = {
 
 // --- Accessor functions --------------------------------------
 // Returns the first entry whose base address covers `addr`.
-const RegDocEntry* intro_reg_doc_by_addr(uint16_t addr) {
-    for (uint16_t i = 0; i < INTRO_REG_DOC_COUNT; ++i) {
-        const RegDocEntry& e = intro_reg_doc_entries[i];
+const RegDocEntry* reg_doc_by_addr(uint16_t addr) {
+    for (uint16_t i = 0; i < REG_DOC_COUNT; ++i) {
+        const RegDocEntry& e = reg_doc_entries[i];
         uint16_t end = (uint16_t)(e.offset_in_group
             + (e.group_node >= 0 ?
-               intro_reg_doc_groups[e.group_node].base_address : 0u)
+               reg_doc_groups[e.group_node].base_address : 0u)
             + e.bank_size * e.words_per_reg);
         uint16_t base = (uint16_t)(e.offset_in_group
             + (e.group_node >= 0 ?
-               intro_reg_doc_groups[e.group_node].base_address : 0u));
+               reg_doc_groups[e.group_node].base_address : 0u));
         if (addr >= base && addr < end) {
-            return &intro_reg_doc_entries[i];
+            return &reg_doc_entries[i];
         }
     }
     return nullptr;
 }
 
-uint8_t intro_reg_doc_word_bytes() {
-    return static_cast<uint8_t>(sizeof(intro_regs::word_t));
+uint8_t reg_doc_word_bytes() {
+    return static_cast<uint8_t>(sizeof(regs::word_t));
 }
 
 // --- Shell config factory ------------------------------------
 static uint8_t _shell_read(uint16_t a, uint32_t* o, uint16_t c) {
     uint8_t tmp[c];
-    uint8_t s = static_cast<uint8_t>(intro_regs::reg_read(a, tmp, c));
+    uint8_t s = static_cast<uint8_t>(regs::reg_read(a, tmp, c));
     if (s <= 2u) for (uint16_t i = 0; i < c; ++i) o[i] = tmp[i];
     return s;
 }
@@ -182,20 +182,20 @@ static uint8_t _shell_write(uint16_t a, const uint32_t* d, uint16_t c) {
     uint8_t tmp[c];
     for (uint16_t i = 0; i < c; ++i)
         tmp[i] = static_cast<uint8_t>(d[i]);
-    return static_cast<uint8_t>(intro_regs::reg_write(a, tmp, c));
+    return static_cast<uint8_t>(regs::reg_write(a, tmp, c));
 }
 
-RegShellConfig intro_make_shell_config(void (*putc_fn)(char c), const char* prompt) {
+RegShellConfig make_shell_config(void (*putc_fn)(char c), const char* prompt) {
     RegShellConfig cfg;
     cfg.reg_read  = _shell_read;
     cfg.reg_write = _shell_write;
-    cfg.reg_reset = intro_regs::reg_reset;
-    cfg.entries     = intro_reg_doc_entries;
-    cfg.entry_count = INTRO_REG_DOC_COUNT;
-    cfg.groups      = intro_reg_doc_groups;
-    cfg.group_count = INTRO_REG_DOC_GROUP_COUNT;
-    cfg.bitfields   = intro_reg_doc_bitfields;
-    cfg.enums       = intro_reg_doc_enums;
+    cfg.reg_reset = regs::reg_reset;
+    cfg.entries     = reg_doc_entries;
+    cfg.entry_count = REG_DOC_COUNT;
+    cfg.groups      = reg_doc_groups;
+    cfg.group_count = REG_DOC_GROUP_COUNT;
+    cfg.bitfields   = reg_doc_bitfields;
+    cfg.enums       = reg_doc_enums;
     cfg.word_bytes  = 1;
     cfg.putc_fn     = putc_fn;
     cfg.prompt      = prompt;

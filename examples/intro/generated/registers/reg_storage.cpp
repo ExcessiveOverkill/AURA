@@ -3,11 +3,11 @@
  * register storage definitions — single owner of all register memory
  */
 
-#include "intro_reg_storage.hpp"
+#include "reg_storage.hpp"
 
-namespace intro_regs {
+namespace regs {
 
     // Zero-initialised: all registers start at 0 until reg_reset() or explicit writes.
     RegMap_t regs = {};
 
-} // namespace intro_regs
+} // namespace regs
