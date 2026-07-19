@@ -373,7 +373,11 @@ class MessagingGenerator:
                     
                     w.line(f"{view_type} operator[](uint8_t idx) const {{")
                     w.indent()
-                    w.line(f"return {view_type}{{.base_msg_id = {base_id} + idx * {stride}}};")
+                    w.line(
+                        f"return {view_type}{{.base_msg_id = "
+                        f"{self._id_type()}(static_cast<uint16_t>({base_id}) + "
+                        f"static_cast<uint16_t>(idx) * {stride})}};"
+                    )
                     w.dedent()
                     w.line("}")
 
@@ -402,7 +406,10 @@ class MessagingGenerator:
                                 break
                             if isinstance(c, Message):
                                 child_idx += 1
-                        w.line(f"{self._id_type()} {child.name}() const {{ return {self._id_type()}(base_msg_id + {child_idx}); }}")
+                        w.line(
+                            f"{self._id_type()} {child.name}() const {{ "
+                            f"return {self._id_type()}(static_cast<uint16_t>(base_msg_id) + {child_idx}); }}"
+                        )
                 
                 w.close_struct()
                 w.blank()

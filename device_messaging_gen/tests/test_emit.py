@@ -1,6 +1,7 @@
 """Tests for generated C++ file contents."""
 
 import os
+import subprocess
 import tempfile
 
 from device_messaging_gen import Message, MessageGroup, MessageSeverity, MessagingGenerator
@@ -126,6 +127,12 @@ def test_types_accessor_structs():
     # Global accessor instance
     assert "msgs" in f
     assert "inline constexpr" in f
+
+
+def test_types_runtime_view_uses_casted_messageid_arithmetic():
+    f = _generate()["msg_types.hpp"]
+    assert "static_cast<uint16_t>(base_msg_id)" in f
+    assert "static_cast<uint16_t>(idx)" in f
 
 
 # ------------------------------------------------------------------
@@ -533,3 +540,56 @@ def test_nested_instanced_group_nodes_canonical():
     assert '"system"' in f
     assert '"motor_0"' not in f
     assert '"motor_1"' not in f
+
+
+def test_generated_messaging_compiles_with_runtime_indexing(compiler):
+    gen = MessagingGenerator("drive", [
+        MessageGroup("drive", [
+            Message("overcurrent_u", MessageSeverity.ERROR),
+            Message("overcurrent_v", MessageSeverity.ERROR),
+        ]),
+        Message("watchdog", MessageSeverity.CRITICAL),
+    ])
+
+    with tempfile.TemporaryDirectory() as d:
+        gen.generate(d)
+        smoke = os.path.join(d, "msg_compile_smoke.cpp")
+        with open(smoke, "w", encoding="utf-8") as f:
+            f.write(
+                """
+#include <cstdint>
+#include "msg_types.hpp"
+#include "msg.hpp"
+
+int main() {
+    MessageId compile_time_id = msgs.drive.overcurrent_u;
+    uint8_t idx = 0;
+    MessageId runtime_id = msgs.drive[idx].overcurrent_u();
+
+    Messaging messaging;
+    messaging.init();
+    messaging.add(compile_time_id, 0u);
+    messaging.clear(runtime_id);
+    return 0;
+}
+"""
+            )
+
+        binary = os.path.join(d, "msg_compile_smoke")
+        if os.name == "nt":
+            binary += ".exe"
+
+        srcs = [
+            os.path.join(d, "msg.cpp"),
+            os.path.join(d, "msg_strings.cpp"),
+            smoke,
+        ]
+        result = subprocess.run(
+            [compiler, "-std=c++17", "-I", d] + srcs + ["-o", binary],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, (
+            "Generated messaging code failed C++17 compile:\n"
+            f"{result.stderr}"
+        )

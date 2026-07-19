@@ -94,13 +94,13 @@ int8_t      group_parent(int8_t group_idx);
 
 struct _Msg_Drive_View {
     MessageId base_msg_id;
-    MessageId fault() const { return MessageId(base_msg_id + 0); }
-    MessageId overtemp() const { return MessageId(base_msg_id + 1); }
+    MessageId fault() const { return MessageId(static_cast<uint16_t>(base_msg_id) + 0); }
+    MessageId overtemp() const { return MessageId(static_cast<uint16_t>(base_msg_id) + 1); }
 };
 
 struct _Msg_Comms_View {
     MessageId base_msg_id;
-    MessageId timeout() const { return MessageId(base_msg_id + 0); }
+    MessageId timeout() const { return MessageId(static_cast<uint16_t>(base_msg_id) + 0); }
 };
 
 struct _Msg_Drive {
@@ -108,7 +108,7 @@ struct _Msg_Drive {
     static constexpr MessageId overtemp = MessageId(1);
 
     _Msg_Drive_View operator[](uint8_t idx) const {
-        return _Msg_Drive_View{.base_msg_id = 0 + idx * 2};
+        return _Msg_Drive_View{.base_msg_id = MessageId(static_cast<uint16_t>(0) + static_cast<uint16_t>(idx) * 2)};
     }
 };
 
@@ -116,7 +116,7 @@ struct _Msg_Comms {
     static constexpr MessageId timeout = MessageId(2);
 
     _Msg_Comms_View operator[](uint8_t idx) const {
-        return _Msg_Comms_View{.base_msg_id = 2 + idx * 1};
+        return _Msg_Comms_View{.base_msg_id = MessageId(static_cast<uint16_t>(2) + static_cast<uint16_t>(idx) * 1)};
     }
 };
 
