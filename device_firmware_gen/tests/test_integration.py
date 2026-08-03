@@ -217,6 +217,47 @@ class TestCompilation:
         r = _compile(compiler, out_dir, tmp_path)
         assert r.returncode == 0, r.stderr
 
+    def test_grouped_instance_methods_compile(self, grouped_rm, out_dir, compiler, tmp_path):
+        FirmwareGenerator(grouped_rm).generate(out_dir)
+
+        smoke = os.path.join(str(tmp_path), "instanced_group_methods_smoke.cpp")
+        with open(smoke, "w", encoding="utf-8") as f:
+            f.write(
+                """
+#include <cstdint>
+#include "reg_storage.hpp"
+
+int main() {
+    regs::regs.periph[0].set_enable(true);
+    bool e0 = regs::regs.periph[0].get_enable();
+    regs::regs.periph[1].set_value(static_cast<uint16_t>(123));
+    uint16_t v1 = regs::regs.periph[1].get_value();
+
+    const auto& periph_const = regs::regs.periph;
+    uint16_t v_const = periph_const[1].get_value();
+
+    (void)e0;
+    (void)v1;
+    (void)v_const;
+    return 0;
+}
+"""
+            )
+
+        storage = os.path.join(out_dir, "reg_storage.cpp")
+        comm = os.path.join(out_dir, "reg_comm.cpp")
+        binary = os.path.join(str(tmp_path), "instanced_group_methods_smoke")
+        if os.name == "nt":
+            binary += ".exe"
+
+        result = subprocess.run(
+            [compiler, "-std=c++17", "-I", out_dir, storage, comm, smoke, "-o", binary],
+            capture_output=True,
+            text=True,
+            cwd=str(tmp_path),
+        )
+        assert result.returncode == 0, result.stderr
+
 
 # ---------------------------------------------------------------------------
 # Exhaustive: generate without error

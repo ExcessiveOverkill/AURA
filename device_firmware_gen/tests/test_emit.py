@@ -214,7 +214,7 @@ class TestDeviceHeader:
         assert "set_ctrl_level" in content
 
     def test_grouped_count_gt1_comment_only(self, grouped_rm, out_dir):
-        # Groups with count > 1 get a comment, not expanded accessors
+        # Device header keeps a guidance comment; typed methods now live on storage instance structs.
         _gen(grouped_rm, out_dir)
         content = _read(out_dir,"reg_device.hpp")
         assert "periph" in content
@@ -264,6 +264,23 @@ class TestCommHeader:
         _gen(simple_rm, out_dir)
         content = _read(out_dir,"reg_comm.hpp")
         assert "RegStatus" in content
+
+
+class TestInstancedGroupStorageAccessors:
+    def test_instance_struct_has_inline_typed_methods(self, grouped_rm, out_dir):
+        _gen(grouped_rm, out_dir)
+        content = _read(out_dir, "reg_storage.hpp")
+        assert "struct PeriphInstance_t" in content
+        assert "inline bool get_enable() const" in content
+        assert "inline void set_enable(bool v)" in content
+        assert "inline uint16_t get_value() const" in content
+        assert "inline void set_value(uint16_t v)" in content
+
+    def test_group_struct_has_const_operator_index(self, grouped_rm, out_dir):
+        _gen(grouped_rm, out_dir)
+        content = _read(out_dir, "reg_storage.hpp")
+        assert "inline PeriphInstance_t& operator[](uint8_t i)" in content
+        assert "inline const PeriphInstance_t& operator[](uint8_t i) const" in content
 
 
 # ---------------------------------------------------------------------------

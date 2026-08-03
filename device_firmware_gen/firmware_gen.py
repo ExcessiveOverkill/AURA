@@ -786,6 +786,7 @@ class FirmwareGenerator:
         mem_base: str,
         reg_wpr: int,
         reg_width: int,
+        getter_const: bool = False,
     ):
         start_bit = field.starting_bit
         width = field.width
@@ -821,11 +822,13 @@ class FirmwareGenerator:
         mask_hex = f"0x{mask:X}u"
         storage = f"{mem_base}.value" if reg_wpr == 1 else f"{mem_base}.words[{word_idx}]"
 
+        const_suffix = " const" if getter_const else ""
+
         if field.type == "bool":
             bit_mask = f"({mask_hex} << {bit_in_word})" if bit_in_word else mask_hex
             raw = f"{storage} & {bit_mask}" if bit_in_word == 0 else f"({storage} >> {bit_in_word}) & {mask_hex}"
             if do_read:
-                w.inline_function(f"bool get_{fn_name}()", f"return ({raw}) != 0u;")
+                w.inline_function(f"bool get_{fn_name}(){const_suffix}", f"return ({raw}) != 0u;")
             if do_write:
                 w.inline_function(
                     f"void set_{fn_name}(bool v)",
@@ -857,9 +860,93 @@ class FirmwareGenerator:
             )
 
         if do_read:
-            w.inline_function(f"{fvt} get_{fn_name}()", get_expr)
+            w.inline_function(f"{fvt} get_{fn_name}(){const_suffix}", get_expr)
         if do_write:
             w.inline_function(f"void set_{fn_name}({fvt} v)", set_expr)
+
+    def _emit_struct_reg_accessors(self, w: CppWriter, node: DeviceRegNode):
+        """Emit inline get/set methods for one register inside a struct body."""
+        reg = node.reg
+        bs = node.bank_size
+        wpr = reg.words_per_register
+
+        fn_base = node.name
+        mem_base = node.name
+        val_type = self._cpp_reg_type(reg, [], node.name)
+
+        if bs == 1 and wpr == 1:
+            w.inline_function(
+                f"{val_type} get_{fn_base}() const",
+                self._sw_get(reg, val_type, f"{mem_base}.value"),
+            )
+            w.inline_function(
+                f"void set_{fn_base}({val_type} v)",
+                self._sw_set(reg, val_type, f"{mem_base}.value"),
+            )
+
+        elif bs == 1:
+            # Multi-word, no bank.
+            if val_type not in ("word_t", self._word_type) or reg.type in ("float", "double"):
+                sz = f"sizeof({val_type})"
+                w.open_function(f"inline {val_type} get_{fn_base}() const")
+                w.line(f"{val_type} v;")
+                w.line(f"memcpy(&v, {mem_base}.words, {sz});")
+                w.line("return v;")
+                w.close_function()
+                w.open_function(f"inline void set_{fn_base}({val_type} v)")
+                w.line(f"memcpy({mem_base}.words, &v, {sz});")
+                w.close_function()
+            else:
+                w.open_function(f"inline void get_{fn_base}(word_t* out) const")
+                w.line(f"for (uint8_t i = 0; i < {wpr}; ++i) out[i] = {mem_base}.words[i];")
+                w.close_function()
+                w.open_function(f"inline void set_{fn_base}(const word_t* data)")
+                w.line(f"for (uint8_t i = 0; i < {wpr}; ++i) {mem_base}.words[i] = data[i];")
+                w.close_function()
+
+        elif wpr == 1:
+            # Bank, single-word.
+            w.inline_function(
+                f"{val_type} get_{fn_base}(uint8_t idx) const",
+                self._sw_get(reg, val_type, f"{mem_base}.entries[idx]"),
+            )
+            w.inline_function(
+                f"void set_{fn_base}(uint8_t idx, {val_type} v)",
+                self._sw_set(reg, val_type, f"{mem_base}.entries[idx]"),
+            )
+
+        else:
+            # Bank + multi-word.
+            if val_type not in ("word_t", self._word_type) or reg.type in ("float", "double"):
+                sz = f"sizeof({val_type})"
+                w.open_function(f"inline {val_type} get_{fn_base}(uint8_t idx) const")
+                w.line(f"{val_type} v;")
+                w.line(f"memcpy(&v, {mem_base}.entries[idx], {sz});")
+                w.line("return v;")
+                w.close_function()
+                w.open_function(f"inline void set_{fn_base}(uint8_t idx, {val_type} v)")
+                w.line(f"memcpy({mem_base}.entries[idx], &v, {sz});")
+                w.close_function()
+            else:
+                w.open_function(f"inline void get_{fn_base}(uint8_t idx, word_t* out) const")
+                w.line(f"for (uint8_t i = 0; i < {wpr}; ++i) out[i] = {mem_base}.entries[idx][i];")
+                w.close_function()
+                w.open_function(f"inline void set_{fn_base}(uint8_t idx, const word_t* data)")
+                w.line(f"for (uint8_t i = 0; i < {wpr}; ++i) {mem_base}.entries[idx][i] = data[i];")
+                w.close_function()
+
+        if reg.bit_field and bs == 1:
+            for field_name, field in reg.bit_field.items():
+                self._emit_bitfield_accessor(
+                    w,
+                    field_name,
+                    field,
+                    fn_base,
+                    mem_base,
+                    wpr,
+                    reg.width,
+                    getter_const=True,
+                )
 
     def _emit_comm_header(self, output_dir: str):
         """
@@ -1681,6 +1768,12 @@ class FirmwareGenerator:
                     w.open_struct(inst_type)
                     for child in node.children:
                         w.line(f"{self._struct_type(*child_path, child.name)} {child.name};")
+                    has_reg_child = any(isinstance(child, DeviceRegNode) for child in node.children)
+                    if has_reg_child:
+                        w.blank()
+                        for child in node.children:
+                            if isinstance(child, DeviceRegNode):
+                                self._emit_struct_reg_accessors(w, child)
                     w.close_struct()
                     w.blank()
 
@@ -1689,6 +1782,10 @@ class FirmwareGenerator:
                     w.line(f"{inst_type} instances[{node.count}];")
                     w.inline_function(
                         f"{inst_type}& operator[](uint8_t i)",
+                        "return instances[i];"
+                    )
+                    w.inline_function(
+                        f"const {inst_type}& operator[](uint8_t i) const",
                         "return instances[i];"
                     )
                     w.close_struct()

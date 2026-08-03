@@ -7,6 +7,7 @@
  *
  * Build from examples/intro/:
  *   g++ -std=c++17 -I. firmware_main.cpp \
+ *       generated/registers/reg_storage.cpp \
  *       generated/registers/reg_comm.cpp \
  *       generated/registers/reg_doc.cpp  \
  *       generated/registers/reg_shell.cpp      \
@@ -88,16 +89,26 @@ static void app_update() {
     // Drive basic_u32_r as a simulated read-only sensor value (firmware writes it).
     set_basic_u32_r(20u + (s_tick % 80u));
 
+    // Example: instanced-group inline methods on the raw storage struct.
+    // These methods are generated on MultipleGroupsInstance_t and are fully inline.
+    const uint8_t group_idx = static_cast<uint8_t>((s_tick / 25u) & 0x03u);
+    ::regs::regs.multiple_groups[group_idx].set_reg4(static_cast<uint8_t>(s_tick & 0xFFu));
+    const uint8_t reg4_shadow = ::regs::regs.multiple_groups[group_idx].get_reg4();
+
+    // Feed the value through a regular typed accessor to show both styles coexist.
+    set_array_of_4_u8(group_idx, reg4_shadow);
+
     // Simulate a drive fault at tick 50.
     if (s_tick == 50u) {
         set_bool_rw(true);
-        g_msgs.add(MessageId::DRIVE__FAULT, /*payload=*/0xA1);
+        // Example: runtime-indexed messaging accessor (computed MessageId view).
+        g_msgs.add(msgs.drive[0].fault(), /*payload=*/0xA1);
     }
 
     // Simulate the fault clearing at tick 100.
     if (s_tick == 100u) {
         set_bool_rw(false);
-        g_msgs.clear(MessageId::DRIVE__FAULT);
+        g_msgs.clear(msgs.drive[0].fault());
     }
 
     ++s_tick;

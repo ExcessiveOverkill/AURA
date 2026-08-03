@@ -145,12 +145,16 @@ namespace regs {
     // multiple_groups — instance fields
     struct MultipleGroupsInstance_t {
         MultipleGroupsReg4_t reg4;
+
+        inline uint8_t get_reg4() const { return reg4.value; }
+        inline void set_reg4(uint8_t v) { reg4.value = v; }
     };
 
     // multiple_groups — 4 instances
     struct MultipleGroups_t {
         MultipleGroupsInstance_t instances[4];
         inline MultipleGroupsInstance_t& operator[](uint8_t i) { return instances[i]; }
+        inline const MultipleGroupsInstance_t& operator[](uint8_t i) const { return instances[i]; }
     };
 
     // --- Top-level register map ----------------------------------
