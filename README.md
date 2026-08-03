@@ -272,6 +272,55 @@ Notes:
 - Counted ancestor groups add index parameters in order
 - Multi-word registers are exposed as typed get/set where possible
 
+### Object-Oriented Access via Main regs Struct
+
+When you want direct struct traversal instead of generated free-function wrappers, access the storage root at `::regs::regs`.
+
+```cpp
+#include "generated/aura.hpp"
+
+void demo_direct_storage_access() {
+	auto& regmap = ::regs::regs;
+
+	// Scalar field
+	regmap.uint12_rw.set(9u);
+	uint8_t u12 = regmap.uint12_rw.get();
+
+	// Nested group field
+	regmap.group2.nested_group.reg3.set(true);
+
+	// Group register leaf methods
+	regmap.group1.reg1.set(static_cast<uint16_t>(777));
+	uint16_t reg1_v = regmap.group1.reg1.get();
+
+	// Optional generic helper templates
+	set(regmap.group1.reg1, static_cast<uint16_t>(778));
+	uint16_t reg1_v2 = get(regmap.group1.reg1);
+
+	// Register bank indexing
+	regmap.array_of_4_u32.set(3, 0xA5A5A5A5u);
+	uint32_t bank_v = regmap.array_of_4_u32.get(3);
+
+	// Counted-group indexing
+	regmap.multiple_groups[1].reg4.set(static_cast<uint8_t>(reg1_v & 0xFFu));
+	uint8_t reg4_v = regmap.multiple_groups[1].reg4.get();
+
+	// Nested counted-group style: regs.outer[0].inner[1].leaf.get()
+
+	(void)u12;
+	(void)reg1_v2;
+	(void)bank_v;
+	(void)reg4_v;
+}
+```
+
+This matches the intro firmware example and shows the current mixed API shape:
+
+- register leaf structs expose `.get()` / `.set(...)`
+- banked leaf structs expose `.get(idx)` / `.set(idx, ...)`
+- counted groups use `operator[]` for instance selection
+- optional generic helpers: `get(node)` and `set(node, value)`
+
 ## Using Generated C++ Messaging
 
 ```cpp

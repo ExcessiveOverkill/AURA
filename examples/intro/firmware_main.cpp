@@ -20,7 +20,6 @@
 #include "generated/registers/reg_shell.hpp"
 
 #include <cstdio>   // printf (stand-in for UART TX in this desktop build)
-#include <cstring>
 
 // ---------------------------------------------------------------------------
 // Dummy HAL UART — replace with your platform SDK
@@ -125,6 +124,45 @@ static void app_demo_accessors_once() {
     ::regs::regs.multiple_groups[2].set_reg4(0x5Au);
     const uint8_t reg4_v = ::regs::regs.multiple_groups[2].get_reg4();
     set_array_of_4_u8(2, reg4_v);
+
+    // Object-oriented direct access through the top-level regs struct.
+    // This style supports hierarchical group traversal and bank indexing.
+    auto& regmap = ::regs::regs;
+
+    // Single-value (sub-word) register.
+    regmap.uint12_rw.set(9u);
+    const uint8_t uint12_direct = regmap.uint12_rw.get();
+
+    // Nested group field: regs.group2.nested_group.reg3
+    regmap.group2.nested_group.reg3.set(true);
+    const bool nested_direct = regmap.group2.nested_group.reg3.get();
+
+    // Group member register with concise get()/set().
+    regmap.group1.reg1.set(static_cast<uint16_t>(777));
+    const uint16_t group_reg_direct = regmap.group1.reg1.get();
+
+    // Optional generic helper templates for the same leaf API.
+    set(regmap.group1.reg1, static_cast<uint16_t>(778));
+    const uint16_t group_reg_via_template = get(regmap.group1.reg1);
+
+    // Bank indexing: regs.array_of_4_u32.entries[idx]
+    regmap.array_of_4_u32.set(3, 0xA5A5A5A5u);
+    const uint32_t bank_direct = regmap.array_of_4_u32.get(3);
+
+    // Counted-group indexing: regs.multiple_groups[idx]
+    regmap.multiple_groups[1].reg4.set(static_cast<uint8_t>(group_reg_direct & 0xFFu));
+    const uint8_t counted_group_direct = regmap.multiple_groups[1].reg4.get();
+
+    // Multi-word in an aligned group still reads cleanly.
+    regmap.aligned_group.energy_wh.set(123456ULL);
+    const uint64_t aligned_group_direct = regmap.aligned_group.energy_wh.get();
+
+    (void)uint12_direct;
+    (void)nested_direct;
+    (void)group_reg_via_template;
+    (void)bank_direct;
+    (void)counted_group_direct;
+    (void)aligned_group_direct;
 
     // Messaging API and both ID styles (compile-time + runtime-indexed views).
     g_msgs.add(msgs.drive.fault, /*payload=*/0xDEADu);

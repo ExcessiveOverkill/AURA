@@ -141,6 +141,35 @@ class TestStorageHeader:
         _gen(simple_rm, out_dir)
         assert "namespace regs" in _read(out_dir,"reg_storage.hpp")
 
+    def test_leaf_single_word_has_get_set_methods(self, simple_rm, out_dir):
+        _gen(simple_rm, out_dir)
+        content = _read(out_dir, "reg_storage.hpp")
+        assert "struct Status_t" in content
+        assert "inline uint8_t get() const" in content
+        assert "inline void set(uint8_t v)" in content
+
+    def test_leaf_banked_has_indexed_get_set_methods(self, banked_rm, out_dir):
+        _gen(banked_rm, out_dir)
+        content = _read(out_dir, "reg_storage.hpp")
+        assert "struct Channel_t" in content
+        assert "inline uint8_t get(uint8_t idx) const" in content
+        assert "inline void set(uint8_t idx, uint8_t v)" in content
+
+    def test_leaf_multiword_has_typed_get_set_methods(self, multiword_rm, out_dir):
+        _gen(multiword_rm, out_dir)
+        content = _read(out_dir, "reg_storage.hpp")
+        assert "struct BigVal_t" in content
+        assert "inline uint64_t get() const" in content
+        assert "inline void set(uint64_t v)" in content
+
+    def test_namespace_get_set_templates_emitted(self, simple_rm, out_dir):
+        _gen(simple_rm, out_dir)
+        content = _read(out_dir, "reg_storage.hpp")
+        assert "template <typename T>" in content
+        assert "inline auto get(const T& reg) -> decltype(reg.get())" in content
+        assert "template <typename T, typename V>" in content
+        assert "inline auto set(T& reg, const V& v) -> decltype(reg.set(v), void())" in content
+
 
 # ---------------------------------------------------------------------------
 # Storage source

@@ -526,6 +526,7 @@ class FirmwareGenerator:
             w.generated_header("device-side register storage — struct layout and extern regs declaration")
             w.pragma_once()
             w.include("reg_types.hpp")
+            w.include("cstring", system=True)
             w.blank()
 
             w.open_namespace(self._ns())
@@ -555,6 +556,21 @@ class FirmwareGenerator:
             w.comment("Single static instance — all register memory lives here.")
             w.comment("Defined in _reg_storage.cpp, zero-initialised at startup.")
             w.line("extern RegMap_t regs;")
+            w.blank()
+
+            w.separator("Convenience get/set helpers")
+            w.comment("Use get(node)/set(node, value) with leaf register structs that expose get()/set().")
+            w.line("template <typename T>")
+            w.line("inline auto get(const T& reg) -> decltype(reg.get()) { return reg.get(); }")
+            w.blank()
+            w.line("template <typename T, typename V>")
+            w.line("inline auto set(T& reg, const V& v) -> decltype(reg.set(v), void()) { reg.set(v); }")
+            w.blank()
+            w.line("template <typename T>")
+            w.line("inline void get(const T& reg, word_t* out) { reg.get(out); }")
+            w.blank()
+            w.line("template <typename T>")
+            w.line("inline void set(T& reg, const word_t* data) { reg.set(data); }")
             w.blank()
 
             w.close_namespace(self._ns())
@@ -1803,8 +1819,78 @@ class FirmwareGenerator:
             w.line(f"word_t entries[{bs}] = {{}};")
         else:
             w.line(f"word_t entries[{bs}][{wpr}] = {{}};")
+
+        w.blank()
+        self._emit_leaf_reg_methods(w, node)
         w.close_struct()
         w.blank()
+
+    def _emit_leaf_reg_methods(self, w: CppWriter, node: DeviceRegNode):
+        """Emit inline get()/set() methods directly on a register storage leaf struct."""
+        reg = node.reg
+        bs = node.bank_size
+        wpr = reg.words_per_register
+        val_type = self._cpp_reg_type(reg, [], node.name)
+
+        if bs == 1 and wpr == 1:
+            w.inline_function(
+                f"{val_type} get() const",
+                self._sw_get(reg, val_type, "value"),
+            )
+            w.inline_function(
+                f"void set({val_type} v)",
+                self._sw_set(reg, val_type, "value"),
+            )
+            return
+
+        if bs == 1:
+            if val_type not in ("word_t", self._word_type) or reg.type in ("float", "double"):
+                sz = f"sizeof({val_type})"
+                w.open_function(f"inline {val_type} get() const")
+                w.line(f"{val_type} v;")
+                w.line(f"memcpy(&v, words, {sz});")
+                w.line("return v;")
+                w.close_function()
+                w.open_function(f"inline void set({val_type} v)")
+                w.line(f"memcpy(words, &v, {sz});")
+                w.close_function()
+            else:
+                w.open_function("inline void get(word_t* out) const")
+                w.line(f"for (uint8_t i = 0; i < {wpr}; ++i) out[i] = words[i];")
+                w.close_function()
+                w.open_function("inline void set(const word_t* data)")
+                w.line(f"for (uint8_t i = 0; i < {wpr}; ++i) words[i] = data[i];")
+                w.close_function()
+            return
+
+        if wpr == 1:
+            w.inline_function(
+                f"{val_type} get(uint8_t idx) const",
+                self._sw_get(reg, val_type, "entries[idx]"),
+            )
+            w.inline_function(
+                f"void set(uint8_t idx, {val_type} v)",
+                self._sw_set(reg, val_type, "entries[idx]"),
+            )
+            return
+
+        if val_type not in ("word_t", self._word_type) or reg.type in ("float", "double"):
+            sz = f"sizeof({val_type})"
+            w.open_function("inline {val_type} get(uint8_t idx) const".format(val_type=val_type))
+            w.line(f"{val_type} v;")
+            w.line(f"memcpy(&v, entries[idx], {sz});")
+            w.line("return v;")
+            w.close_function()
+            w.open_function("inline void set(uint8_t idx, {val_type} v)".format(val_type=val_type))
+            w.line(f"memcpy(entries[idx], &v, {sz});")
+            w.close_function()
+        else:
+            w.open_function("inline void get(uint8_t idx, word_t* out) const")
+            w.line(f"for (uint8_t i = 0; i < {wpr}; ++i) out[i] = entries[idx][i];")
+            w.close_function()
+            w.open_function("inline void set(uint8_t idx, const word_t* data)")
+            w.line(f"for (uint8_t i = 0; i < {wpr}; ++i) entries[idx][i] = data[i];")
+            w.close_function()
 
     def _emit_struct_types(self, w: CppWriter, nodes: list, name_path: list):
         """Depth-first: emit inner types before outer structs that reference them."""

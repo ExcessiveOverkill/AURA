@@ -6,6 +6,7 @@
 #pragma once
 
 #include "reg_types.hpp"
+#include <cstring>
 
 namespace regs {
 
@@ -14,12 +15,30 @@ namespace regs {
     //   basic read/write uint32 register
     struct BasicU32Rw_t {
         word_t words[4] = {};
+
+        inline uint32_t get() const {
+            uint32_t v;
+            memcpy(&v, words, sizeof(uint32_t));
+            return v;
+        }
+        inline void set(uint32_t v) {
+            memcpy(words, &v, sizeof(uint32_t));
+        }
     };
 
     // basic_u32_r — unsigned 32-bit | read-only
     //   basic read-only uint32 register
     struct BasicU32R_t {
         word_t words[4] = {};
+
+        inline uint32_t get() const {
+            uint32_t v;
+            memcpy(&v, words, sizeof(uint32_t));
+            return v;
+        }
+        inline void set(uint32_t v) {
+            memcpy(words, &v, sizeof(uint32_t));
+        }
     };
 
     // u32_with_limits — unsigned 32-bit | read-write
@@ -27,72 +46,156 @@ namespace regs {
     //   min=0, max=100, default=50
     struct U32WithLimits_t {
         word_t words[4] = {};
+
+        inline uint32_t get() const {
+            uint32_t v;
+            memcpy(&v, words, sizeof(uint32_t));
+            return v;
+        }
+        inline void set(uint32_t v) {
+            memcpy(words, &v, sizeof(uint32_t));
+        }
     };
 
     // uint12_rw — unsigned 4-bit | read-write
     //   4-bit unsigned integer
     struct Uint12Rw_t {
         word_t value = 0;
+
+        inline uint8_t get() const { return value; }
+        inline void set(uint8_t v) { value = v; }
     };
 
     // uint64_rw — unsigned 64-bit | read-write
     //   64-bit unsigned integer
     struct Uint64Rw_t {
         word_t words[8] = {};
+
+        inline uint64_t get() const {
+            uint64_t v;
+            memcpy(&v, words, sizeof(uint64_t));
+            return v;
+        }
+        inline void set(uint64_t v) {
+            memcpy(words, &v, sizeof(uint64_t));
+        }
     };
 
     // uint48_rw — unsigned 48-bit | read-write
     //   48-bit unsigned integer
     struct Uint48Rw_t {
         word_t words[8] = {};
+
+        inline uint64_t get() const {
+            uint64_t v;
+            memcpy(&v, words, sizeof(uint64_t));
+            return v;
+        }
+        inline void set(uint64_t v) {
+            memcpy(words, &v, sizeof(uint64_t));
+        }
     };
 
     // uint32_rw — unsigned 32-bit | read-write
     //   32-bit unsigned integer
     struct Uint32Rw_t {
         word_t words[4] = {};
+
+        inline uint32_t get() const {
+            uint32_t v;
+            memcpy(&v, words, sizeof(uint32_t));
+            return v;
+        }
+        inline void set(uint32_t v) {
+            memcpy(words, &v, sizeof(uint32_t));
+        }
     };
 
     // int32_rw — signed 32-bit | read-write
     //   32-bit signed integer
     struct Int32Rw_t {
         word_t words[4] = {};
+
+        inline int32_t get() const {
+            int32_t v;
+            memcpy(&v, words, sizeof(int32_t));
+            return v;
+        }
+        inline void set(int32_t v) {
+            memcpy(words, &v, sizeof(int32_t));
+        }
     };
 
     // bool_rw — bool 1-bit | read-write
     //   boolean value
     struct BoolRw_t {
         word_t value = 0;
+
+        inline bool get() const { return value != 0u; }
+        inline void set(bool v) { value = v ? 1u : 0u; }
     };
 
     // float_rw — float 32-bit | read-write
     //   32-bit floating point value
     struct FloatRw_t {
         word_t words[4] = {};
+
+        inline float get() const {
+            float v;
+            memcpy(&v, words, sizeof(float));
+            return v;
+        }
+        inline void set(float v) {
+            memcpy(words, &v, sizeof(float));
+        }
     };
 
     // double_rw — double 64-bit | read-write
     //   64-bit floating point value
     struct DoubleRw_t {
         word_t words[8] = {};
+
+        inline double get() const {
+            double v;
+            memcpy(&v, words, sizeof(double));
+            return v;
+        }
+        inline void set(double v) {
+            memcpy(words, &v, sizeof(double));
+        }
     };
 
     // enum_rw — unsigned 8-bit | read-write
     //   enumerated type with values RED=0, GREEN=1, BLUE=2
     struct EnumRw_t {
         word_t value = 0;
+
+        inline enum_rw_e get() const { return static_cast<enum_rw_e>(value); }
+        inline void set(enum_rw_e v) { value = static_cast<uint8_t>(v); }
     };
 
     // array_of_4_u32 — unsigned 32-bit (bank_size=4) | read-write
     //   array of 4 uint32 registers
     struct ArrayOf4U32_t {
         word_t entries[4][4] = {};
+
+        inline uint32_t get(uint8_t idx) const {
+            uint32_t v;
+            memcpy(&v, entries[idx], sizeof(uint32_t));
+            return v;
+        }
+        inline void set(uint8_t idx, uint32_t v) {
+            memcpy(entries[idx], &v, sizeof(uint32_t));
+        }
     };
 
     // array_of_4_u8 — unsigned 8-bit (bank_size=4) | read-write
     //   array of 4 uint8 registers
     struct ArrayOf4U8_t {
         word_t entries[4] = {};
+
+        inline uint8_t get(uint8_t idx) const { return entries[idx]; }
+        inline void set(uint8_t idx, uint8_t v) { entries[idx] = v; }
     };
 
     // command_u16_w — unsigned 16-bit | write-only
@@ -100,6 +203,15 @@ namespace regs {
     //   unit=raw_cmd
     struct CommandU16W_t {
         word_t words[2] = {};
+
+        inline uint16_t get() const {
+            uint16_t v;
+            memcpy(&v, words, sizeof(uint16_t));
+            return v;
+        }
+        inline void set(uint16_t v) {
+            memcpy(words, &v, sizeof(uint16_t));
+        }
     };
 
     // register_with_bitfields — unsigned 16-bit | read-write
@@ -107,18 +219,45 @@ namespace regs {
     //   Fields: field1[3:0], field2[4:4], field3[7:5]
     struct RegisterWithBitfields_t {
         word_t words[2] = {};
+
+        inline uint16_t get() const {
+            uint16_t v;
+            memcpy(&v, words, sizeof(uint16_t));
+            return v;
+        }
+        inline void set(uint16_t v) {
+            memcpy(words, &v, sizeof(uint16_t));
+        }
     };
 
     // group1/reg1 — unsigned 16-bit | read-write
     //   16-bit unsigned integer register in group1
     struct Group1Reg1_t {
         word_t words[2] = {};
+
+        inline uint16_t get() const {
+            uint16_t v;
+            memcpy(&v, words, sizeof(uint16_t));
+            return v;
+        }
+        inline void set(uint16_t v) {
+            memcpy(words, &v, sizeof(uint16_t));
+        }
     };
 
     // group1/reg2 — float 32-bit | read-write
     //   32-bit float register in group1
     struct Group1Reg2_t {
         word_t words[4] = {};
+
+        inline float get() const {
+            float v;
+            memcpy(&v, words, sizeof(float));
+            return v;
+        }
+        inline void set(float v) {
+            memcpy(words, &v, sizeof(float));
+        }
     };
 
     // group1
@@ -131,6 +270,9 @@ namespace regs {
     //   boolean register in nested_group inside group2
     struct Group2NestedGroupReg3_t {
         word_t value = 0;
+
+        inline bool get() const { return value != 0u; }
+        inline void set(bool v) { value = v ? 1u : 0u; }
     };
 
     // group2/nested_group
@@ -147,6 +289,9 @@ namespace regs {
     //   8-bit unsigned integer register in multiple_groups
     struct MultipleGroupsReg4_t {
         word_t value = 0;
+
+        inline uint8_t get() const { return value; }
+        inline void set(uint8_t v) { value = v; }
     };
 
     // multiple_groups — instance fields
@@ -169,6 +314,15 @@ namespace regs {
     //   unit=mA, min=0, max=5000, default=2500
     struct AlignedGroupCurrentLimit_t {
         word_t words[2] = {};
+
+        inline uint16_t get() const {
+            uint16_t v;
+            memcpy(&v, words, sizeof(uint16_t));
+            return v;
+        }
+        inline void set(uint16_t v) {
+            memcpy(words, &v, sizeof(uint16_t));
+        }
     };
 
     // aligned_group/energy_wh — unsigned 64-bit | read-write
@@ -176,6 +330,15 @@ namespace regs {
     //   unit=Wh, min=0, max=1000000, default=0
     struct AlignedGroupEnergyWh_t {
         word_t words[8] = {};
+
+        inline uint64_t get() const {
+            uint64_t v;
+            memcpy(&v, words, sizeof(uint64_t));
+            return v;
+        }
+        inline void set(uint64_t v) {
+            memcpy(words, &v, sizeof(uint64_t));
+        }
     };
 
     // aligned_group
@@ -211,5 +374,19 @@ namespace regs {
     // Single static instance — all register memory lives here.
     // Defined in _reg_storage.cpp, zero-initialised at startup.
     extern RegMap_t regs;
+
+    // --- Convenience get/set helpers -----------------------------
+    // Use get(node)/set(node, value) with leaf register structs that expose get()/set().
+    template <typename T>
+    inline auto get(const T& reg) -> decltype(reg.get()) { return reg.get(); }
+
+    template <typename T, typename V>
+    inline auto set(T& reg, const V& v) -> decltype(reg.set(v), void()) { reg.set(v); }
+
+    template <typename T>
+    inline void get(const T& reg, word_t* out) { reg.get(out); }
+
+    template <typename T>
+    inline void set(T& reg, const word_t* data) { reg.set(data); }
 
 } // namespace regs
