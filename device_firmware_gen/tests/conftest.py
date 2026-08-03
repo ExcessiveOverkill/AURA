@@ -46,6 +46,18 @@ def grouped_rm():
 
 
 @pytest.fixture
+def nested_counted_rm():
+    rm = RegisterMapGenerator("nested_counted_mod", [], word_width=32)
+    outer = Group("outer", count=2)
+    inner = Group("inner", count=3)
+    inner.add(Register("leaf", rw="rw", type="unsigned", width=8))
+    outer.add(inner)
+    rm.add(outer)
+    rm.generate()
+    return rm
+
+
+@pytest.fixture
 def multiword_rm():
     rm = RegisterMapGenerator("mw_mod", [], word_width=32)
     rm.add(Register("big_val", rw="r", type="unsigned", width=64))

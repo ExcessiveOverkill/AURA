@@ -9,7 +9,7 @@
 
 namespace regs {
 
-    constexpr uint16_t REG_META_SIZE = 2040u;
+    constexpr uint16_t REG_META_SIZE = 2453u;
 
     // Read `count` raw bytes from the metadata blob starting at byte `offset`.
     // Returns 0 on success, 1 if offset + count > REG_META_SIZE.

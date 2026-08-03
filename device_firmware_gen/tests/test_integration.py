@@ -258,6 +258,39 @@ int main() {
         )
         assert result.returncode == 0, result.stderr
 
+    def test_nested_counted_group_device_accessors_compile(self, nested_counted_rm, out_dir, compiler, tmp_path):
+        FirmwareGenerator(nested_counted_rm).generate(out_dir)
+
+        smoke = os.path.join(str(tmp_path), "nested_counted_device_accessors_smoke.cpp")
+        with open(smoke, "w", encoding="utf-8") as f:
+            f.write(
+                """
+#include <cstdint>
+#include "reg_device.hpp"
+
+int main() {
+    regs::set_outer_inner_leaf(1, 2, static_cast<uint8_t>(0x5A));
+    uint8_t v = regs::get_outer_inner_leaf(1, 2);
+    (void)v;
+    return 0;
+}
+"""
+            )
+
+        storage = os.path.join(out_dir, "reg_storage.cpp")
+        comm = os.path.join(out_dir, "reg_comm.cpp")
+        binary = os.path.join(str(tmp_path), "nested_counted_device_accessors_smoke")
+        if os.name == "nt":
+            binary += ".exe"
+
+        result = subprocess.run(
+            [compiler, "-std=c++17", "-I", out_dir, storage, comm, smoke, "-o", binary],
+            capture_output=True,
+            text=True,
+            cwd=str(tmp_path),
+        )
+        assert result.returncode == 0, result.stderr
+
 
 # ---------------------------------------------------------------------------
 # Exhaustive: generate without error

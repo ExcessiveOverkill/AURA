@@ -134,6 +134,14 @@ int reg_verify() {
         REG_VERIFY_ASSERT(regs::get_array_of_4_u8(3u) == static_cast<uint8_t>(4u));
     }
 
+    // command_u16_w: unsigned 16-bit | w | bank=1 | wpr=2
+    {
+        regs::reg_reset();
+        uint16_t _tv = static_cast<uint16_t>(171u);
+        regs::set_command_u16_w(_tv);
+        REG_VERIFY_ASSERT(regs::get_command_u16_w() == _tv);
+    }
+
     // register_with_bitfields: unsigned 16-bit | rw | bank=1 | wpr=2
     {
         regs::reg_reset();
@@ -166,6 +174,22 @@ int reg_verify() {
     }
 
     // multiple_groups: count=4 — no per-instance accessors; tested via comm protocol
+
+    // aligned_group_current_limit: unsigned 16-bit | rw | bank=1 | wpr=2
+    {
+        regs::reg_reset();
+        uint16_t _tv = static_cast<uint16_t>(171u);
+        regs::set_aligned_group_current_limit(_tv);
+        REG_VERIFY_ASSERT(regs::get_aligned_group_current_limit() == _tv);
+    }
+
+    // aligned_group_energy_wh: unsigned 64-bit | rw | bank=1 | wpr=8
+    {
+        regs::reg_reset();
+        uint64_t _tv = static_cast<uint64_t>(171u);
+        regs::set_aligned_group_energy_wh(_tv);
+        REG_VERIFY_ASSERT(regs::get_aligned_group_energy_wh() == _tv);
+    }
 
     return 0;
 }

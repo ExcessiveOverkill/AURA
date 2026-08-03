@@ -10,6 +10,15 @@ const uint32_t message_values[MESSAGE_COUNT] = {
     0x30000000u,  // [  0] DRIVE__FAULT  severity=ERROR
     0x20000001u,  // [  1] DRIVE__OVERTEMP  severity=WARNING
     0x30000002u,  // [  2] COMMS__TIMEOUT  severity=ERROR
+    0x10000003u,  // [  3] SYSTEM__BOOT  severity=MESSAGE
+    0x00000004u,  // [  4] SYSTEM__IDLE  severity=NONE
+    0x20000005u,  // [  5] SYSTEM__POWER__LOW_VOLTAGE  severity=WARNING
+    0x30000006u,  // [  6] SYSTEM__POWER__OVER_VOLTAGE  severity=ERROR
+    0x30000007u,  // [  7] MOTOR_0__FAULT  severity=ERROR
+    0x20000008u,  // [  8] MOTOR_0__OVERTEMP  severity=WARNING
+    0x30000009u,  // [  9] MOTOR_1__FAULT  severity=ERROR
+    0x2000000Au,  // [ 10] MOTOR_1__OVERTEMP  severity=WARNING
+    0x4000000Bu,  // [ 11] SAFETY__WATCHDOG  severity=CRITICAL
 };
 
 // --- Persistent-mode debounce delay table (microseconds) -----
@@ -17,19 +26,57 @@ const uint32_t message_delays[MESSAGE_COUNT] = {
     0u,
     0u,
     0u,
+    0u,
+    0u,
+    20000u,
+    0u,
+    0u,
+    50000u,
+    0u,
+    50000u,
+    0u,
 };
 
 // --- String tables (.rodata — zero RAM) ----------------------
-static const char* const _msg_names[MESSAGE_COUNT] = {
+static const uint8_t _msg_string_id[MESSAGE_COUNT] = {
+    0,  // DRIVE__FAULT
+    1,  // DRIVE__OVERTEMP
+    2,  // COMMS__TIMEOUT
+    3,  // SYSTEM__BOOT
+    4,  // SYSTEM__IDLE
+    5,  // SYSTEM__POWER__LOW_VOLTAGE
+    6,  // SYSTEM__POWER__OVER_VOLTAGE
+    7,  // MOTOR_0__FAULT
+    8,  // MOTOR_0__OVERTEMP
+    7,  // MOTOR_1__FAULT
+    8,  // MOTOR_1__OVERTEMP
+    9,  // SAFETY__WATCHDOG
+};
+
+static const char* const _msg_names[UNIQUE_MSG_COUNT] = {
     "fault",
     "overtemp",
     "timeout",
+    "boot",
+    "idle",
+    "low_voltage",
+    "over_voltage",
+    "fault",
+    "overtemp",
+    "watchdog",
 };
 
-static const char* const _msg_descs[MESSAGE_COUNT] = {
+static const char* const _msg_descs[UNIQUE_MSG_COUNT] = {
     "Drive fault — output disabled",
     "Motor temperature above safe operating limit",
     "Host communication watchdog expired",
+    "Boot complete",
+    "System idle marker",
+    "DC bus low",
+    "DC bus high",
+    "Motor fault",
+    "Motor temperature high",
+    "Watchdog timeout",
 };
 
 static const char* const _severity_labels[] = {
@@ -44,21 +91,34 @@ static const char* const _severity_labels[] = {
 const GroupNode msg_group_nodes[GROUP_COUNT] = {
     { "drive", -1 },  // [0]
     { "comms", -1 },  // [1]
+    { "system", -1 },  // [2]
+    { "power", 2 },  // [3]
+    { "motor", -1 },  // [4]
+    { "safety", -1 },  // [5]
 };
 
 const int8_t msg_group_idx[MESSAGE_COUNT] = {
     0,  // DRIVE__FAULT
     0,  // DRIVE__OVERTEMP
     1,  // COMMS__TIMEOUT
+    2,  // SYSTEM__BOOT
+    2,  // SYSTEM__IDLE
+    3,  // SYSTEM__POWER__LOW_VOLTAGE
+    3,  // SYSTEM__POWER__OVER_VOLTAGE
+    4,  // MOTOR_0__FAULT
+    4,  // MOTOR_0__OVERTEMP
+    4,  // MOTOR_1__FAULT
+    4,  // MOTOR_1__OVERTEMP
+    5,  // SAFETY__WATCHDOG
 };
 
 // --- Accessor function implementations -----------------------
 const char* msg_get_name(MessageId id) {
-    return _msg_names[uint16_t(id)];
+    return _msg_names[_msg_string_id[uint16_t(id)]];
 }
 
 const char* msg_get_desc(MessageId id) {
-    return _msg_descs[uint16_t(id)];
+    return _msg_descs[_msg_string_id[uint16_t(id)]];
 }
 
 MessageSeverity msg_get_severity(MessageId id) {

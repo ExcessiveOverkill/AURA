@@ -29,6 +29,9 @@ static const char* const _reg_names[REG_DOC_COUNT] = {
     "reg4",
     "reg1",
     "reg2",
+    "current_limit",
+    "energy_wh",
+    "command_u16_w",
 };
 
 static const char* const _reg_descs[REG_DOC_COUNT] = {
@@ -51,6 +54,9 @@ static const char* const _reg_descs[REG_DOC_COUNT] = {
     "8-bit unsigned integer register in multiple_groups",
     "16-bit unsigned integer register in group1",
     "32-bit float register in group1",
+    "Current limit with units and explicit group alignment",
+    "Multi-word register with range/default and units",
+    "write-only command register with fixed address and unit metadata",
 };
 
 static const char* const _reg_units[REG_DOC_COUNT] = {
@@ -73,6 +79,9 @@ static const char* const _reg_units[REG_DOC_COUNT] = {
     "",
     "",
     "",
+    "mA",
+    "Wh",
+    "raw_cmd",
 };
 
 // --- Bit-field string tables (.rodata) -----------------------
@@ -101,6 +110,7 @@ static const char* const _grp_names[REG_DOC_GROUP_COUNT] = {
     "group2",
     "nested_group",
     "multiple_groups",
+    "aligned_group",
 };
 
 // --- Enum value table ----------------------------------------
@@ -123,6 +133,7 @@ const RegDocGroupNode reg_doc_groups[REG_DOC_GROUP_COUNT] = {
     { _grp_names[1], -1, 1, 15u, 1u },
     { _grp_names[2], 1, 1, 15u, 1u },
     { _grp_names[3], -1, 4, 74u, 1u },
+    { _grp_names[4], -1, 1, 96u, 32u },
 };
 
 // --- Register entry table ------------------------------------
@@ -146,6 +157,9 @@ const RegDocEntry reg_doc_entries[REG_DOC_COUNT] = {
     { _reg_names[16], _reg_descs[16], _reg_units[16], RegDocType::UNSIGNED, 2, 8, 1, 1, false, 0u, 0u, 3, 0u, 3, 0, 3, 0 },
     { _reg_names[17], _reg_descs[17], _reg_units[17], RegDocType::UNSIGNED, 2, 16, 2, 1, false, 0u, 0u, 0, 0u, 3, 0, 3, 0 },
     { _reg_names[18], _reg_descs[18], _reg_units[18], RegDocType::FLOAT, 2, 32, 4, 1, false, 0u, 0u, 0, 4u, 3, 0, 3, 0 },
+    { _reg_names[19], _reg_descs[19], _reg_units[19], RegDocType::UNSIGNED, 2, 16, 2, 1, true, 0u, 136u, 4, 0u, 3, 0, 3, 0 },
+    { _reg_names[20], _reg_descs[20], _reg_units[20], RegDocType::UNSIGNED, 2, 64, 8, 1, true, 0u, 64u, 4, 8u, 3, 0, 3, 0 },
+    { _reg_names[21], _reg_descs[21], _reg_units[21], RegDocType::UNSIGNED, 1, 16, 2, 1, false, 0u, 0u, -1, 128u, 3, 0, 3, 0 },
 };
 
 // --- Accessor functions --------------------------------------

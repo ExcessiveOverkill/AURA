@@ -214,11 +214,25 @@ class TestDeviceHeader:
         assert "set_ctrl_level" in content
 
     def test_grouped_count_gt1_comment_only(self, grouped_rm, out_dir):
-        # Device header keeps a guidance comment; typed methods now live on storage instance structs.
+        # Counted groups keep guidance comments and now also emit indexed get/set wrappers.
         _gen(grouped_rm, out_dir)
         content = _read(out_dir,"reg_device.hpp")
         assert "periph" in content
         assert "count=2" in content
+
+    def test_grouped_count_gt1_emits_indexed_accessors(self, grouped_rm, out_dir):
+        _gen(grouped_rm, out_dir)
+        content = _read(out_dir, "reg_device.hpp")
+        assert "inline bool get_periph_enable(uint8_t periph_idx)" in content
+        assert "inline void set_periph_enable(uint8_t periph_idx, bool v)" in content
+        assert "inline uint16_t get_periph_value(uint8_t periph_idx)" in content
+        assert "inline void set_periph_value(uint8_t periph_idx, uint16_t v)" in content
+
+    def test_nested_counted_groups_emit_multi_index_accessors(self, nested_counted_rm, out_dir):
+        _gen(nested_counted_rm, out_dir)
+        content = _read(out_dir, "reg_device.hpp")
+        assert "inline uint8_t get_outer_inner_leaf(uint8_t outer_idx, uint8_t outer_inner_idx)" in content
+        assert "inline void set_outer_inner_leaf(uint8_t outer_idx, uint8_t outer_inner_idx, uint8_t v)" in content
 
     def test_multiword_bulk_accessor(self, multiword_rm, out_dir):
         _gen(multiword_rm, out_dir)

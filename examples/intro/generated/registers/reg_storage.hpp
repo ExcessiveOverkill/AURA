@@ -95,6 +95,13 @@ namespace regs {
         word_t entries[4] = {};
     };
 
+    // command_u16_w — unsigned 16-bit | write-only
+    //   write-only command register with fixed address and unit metadata
+    //   unit=raw_cmd
+    struct CommandU16W_t {
+        word_t words[2] = {};
+    };
+
     // register_with_bitfields — unsigned 16-bit | read-write
     //   Register with multiple bit fields
     //   Fields: field1[3:0], field2[4:4], field3[7:5]
@@ -157,6 +164,26 @@ namespace regs {
         inline const MultipleGroupsInstance_t& operator[](uint8_t i) const { return instances[i]; }
     };
 
+    // aligned_group/current_limit — unsigned 16-bit | read-write
+    //   Current limit with units and explicit group alignment
+    //   unit=mA, min=0, max=5000, default=2500
+    struct AlignedGroupCurrentLimit_t {
+        word_t words[2] = {};
+    };
+
+    // aligned_group/energy_wh — unsigned 64-bit | read-write
+    //   Multi-word register with range/default and units
+    //   unit=Wh, min=0, max=1000000, default=0
+    struct AlignedGroupEnergyWh_t {
+        word_t words[8] = {};
+    };
+
+    // aligned_group
+    struct AlignedGroup_t {
+        AlignedGroupCurrentLimit_t current_limit;
+        AlignedGroupEnergyWh_t energy_wh;
+    };
+
     // --- Top-level register map ----------------------------------
     struct RegMap_t {
         BasicU32Rw_t basic_u32_rw;                        // 0x0000
@@ -173,10 +200,12 @@ namespace regs {
         EnumRw_t enum_rw;                                 // 0x000E
         ArrayOf4U32_t array_of_4_u32;                     // 0x0038
         ArrayOf4U8_t array_of_4_u8;                       // 0x002C
+        CommandU16W_t command_u16_w;                      // 0x0080
         RegisterWithBitfields_t register_with_bitfields;  // 0x0048
         Group1_t group1;                                  // 0x0050
         Group2_t group2;                                  // 0x000F
         MultipleGroups_t multiple_groups;                 // 0x004A
+        AlignedGroup_t aligned_group;                     // 0x0060
     };
 
     // Single static instance — all register memory lives here.

@@ -1,56 +1,327 @@
-# AURA — Automatic Universal Register Addressing
+# AURA - Automatic Universal Register Addressing
 
-Generate C++ firmware register maps and messaging systems from Python definitions.
+AURA generates C++ firmware register and messaging code from Python definitions.
 
-## Installation
+## Install
 
 ```bash
 pip install git+https://github.com/ExcessiveOverkill/AURA.git
 ```
 
-#### Upgrade
+Upgrade:
 
 ```bash
 pip install --upgrade --force-reinstall --no-cache-dir git+https://github.com/ExcessiveOverkill/AURA.git
 ```
 
-## Usage
+## What AURA Generates
 
-Create a `config.py` in your project:
+From one Python config, AURA emits:
+
+- registers/: register storage, typed accessor functions, comm API, metadata/docs hooks
+- messaging/: message IDs, string tables, group views, Messaging runtime class
+- aura.hpp: single include for generated modules
+- docs/: markdown register and message documentation
+
+## Quick Start (Integrated API)
 
 ```python
-from aura import AURADevice, Register, Group, Message, MessageGroup, MessageSeverity
+from aura import (
+	AURADevice,
+	ProtocolInterface,
+	Register,
+	Group,
+	Message,
+	MessageGroup,
+	MessageSeverity,
+)
 
-device = AURADevice("my_device", word_width=32, desc="My embedded device")
+device = AURADevice(
+	name="drive",
+	word_width=32,
+	compatible_drivers=["aura-drive"],
+	desc="Servo drive controller",
+	interfaces=[ProtocolInterface.SHELL],
+)
 
-# Registers
-device.regmap.add(Register("status",  rw="r",  type="unsigned", width=8))
-device.regmap.add(Register("control", rw="rw", type="unsigned", width=8))
+# Top-level registers
+device.regmap.add(Register("status", rw="r", type="unsigned", width=16, desc="Status bits"))
+device.regmap.add(Register("command", rw="w", type="unsigned", width=16, desc="Command input"))
+device.regmap.add(Register("setpoint", rw="rw", type="float", desc="Velocity setpoint"))
 
-# Optional: register groups
-motor = Group("motor")
-motor.add(Register("speed",   rw="rw", type="float"))
-motor.add(Register("torque",  rw="rw", type="float"))
+# Grouped registers
+motor = Group("motor", count=2, desc="Per-motor control")
+motor.add(Register("enable", rw="rw", type="bool", desc="Enable output"))
+motor.add(Register("current_limit", rw="rw", type="unsigned", width=12, min_val=0, max_val=3000, default_val=1500, unit="mA"))
 device.regmap.add(motor)
 
-# Optional: messages/logging
-faults = MessageGroup("faults")
-faults.add(Message("overcurrent", MessageSeverity.ERROR, desc="Phase current exceeded limit"))
-device.messages.append(faults)
+# Messaging groups
+drive_msgs = MessageGroup("drive", count=2)
+drive_msgs.add(Message("fault", MessageSeverity.ERROR, desc="Drive fault active"))
+drive_msgs.add(Message("overtemp", MessageSeverity.WARNING, desc="Thermal warning", delay_us=50_000))
 
-device.generate("generated/")
+comms_msgs = MessageGroup("comms")
+comms_msgs.add(Message("timeout", MessageSeverity.ERROR, desc="Host comm timeout"))
+
+device.messages.extend([drive_msgs, comms_msgs])
+
+device.generate("generated")
 ```
 
-Run it:
+Run:
 
 ```bash
 python config.py
 ```
 
-This produces `generated/my_device/` containing:
-- `registers/` — C++ register structs, accessors, and binary comm interface
-- `messaging/` — C++ message enums and logging class (if messages defined)
-- `aura.hpp` — single master include
-- `docs/` — markdown register map and message tables
+## Register Definition Options
 
-See `examples/` for complete working examples.
+Register supports:
+
+- rw: r, w, rw
+- type: unsigned, signed, bool, float, double
+- width: arbitrary integer/bit width where valid for the type
+- bank_size: arrays of registers
+- bit_field: sub-register fields packed in a parent register
+- enum: named integer values for unsigned types
+- min_val, max_val, default_val
+- unit
+- start_address (optional fixed placement)
+
+Group supports:
+
+- nested groups
+- count for instanced groups
+- alignment
+- start_address
+
+Comprehensive register example:
+
+```python
+from aura import Register, Group
+
+# Scalar
+r_status = Register("status", rw="r", type="unsigned", width=8)
+
+# Enum register
+r_mode = Register(
+	"mode",
+	rw="rw",
+	type="unsigned",
+	width=8,
+	enum={"IDLE": 0, "RUN": 1, "FAULT": 2},
+	default_val="IDLE",
+)
+
+# Bit-field register
+r_ctrl = Register(
+	"control",
+	rw="rw",
+	type="unsigned",
+	width=16,
+	bit_field=[
+		Register("enable", type="bool"),
+		Register("gain", type="unsigned", width=6, start_address=1),
+		Register("profile", type="unsigned", width=3, start_address=8),
+	],
+)
+
+# Banked register
+r_samples = Register("samples", rw="rw", type="unsigned", width=16, bank_size=8)
+
+# Multi-word + ranges/defaults
+r_energy = Register(
+	"energy_wh",
+	rw="rw",
+	type="unsigned",
+	width=64,
+	min_val=0,
+	max_val=10_000_000,
+	default_val=0,
+)
+
+# Nested/instanced groups
+outer = Group("axis", count=3)
+inner = Group("state")
+inner.add(Register("position", rw="rw", type="signed", width=32, unit="counts"))
+inner.add(Register("velocity", rw="rw", type="signed", width=32, unit="counts_per_s"))
+outer.add(inner)
+```
+
+## Message Definition Options
+
+Message supports:
+
+- name
+- severity: NONE, MESSAGE, WARNING, ERROR, CRITICAL
+- desc
+- delay_us
+
+MessageGroup supports:
+
+- nesting
+- count for instanced message groups
+
+Comprehensive messaging example:
+
+```python
+from aura import Message, MessageGroup, MessageSeverity
+
+system = MessageGroup("system")
+system.add(Message("boot", MessageSeverity.MESSAGE, desc="Boot complete"))
+
+power = MessageGroup("power")
+power.add(Message("low_voltage", MessageSeverity.WARNING, delay_us=20_000, desc="DC bus low"))
+power.add(Message("over_voltage", MessageSeverity.ERROR, desc="DC bus high"))
+system.add(power)
+
+motor = MessageGroup("motor", count=4)
+motor.add(Message("fault", MessageSeverity.ERROR, desc="Motor fault"))
+motor.add(Message("overtemp", MessageSeverity.WARNING, desc="Motor temperature high"))
+```
+
+## Generation Modes
+
+### 1) Integrated AURADevice (recommended)
+
+Use AURADevice when you want registers + messages + docs + master include in one call.
+
+```python
+from aura import AURADevice
+
+device = AURADevice("my_module", word_width=16)
+# ... populate device.regmap and device.messages ...
+device.generate("generated")
+```
+
+### 2) Registers only (standalone pipeline)
+
+```python
+from register_mapper import RegisterMapGenerator, Register, Group
+from device_firmware_gen import FirmwareGenerator
+
+rm = RegisterMapGenerator("my_module", compatible_drivers=["drv-a"], word_width=32)
+rm.add(Register("status", rw="r", type="unsigned", width=8))
+
+g = Group("periph", count=2)
+g.add(Register("value", rw="rw", type="unsigned", width=16))
+rm.add(g)
+
+rm.generate()
+rm.exportJSON("generated/registers/regmap.json")
+FirmwareGenerator(rm).generate("generated/registers")
+```
+
+### 3) Registers from JSON
+
+```python
+from register_mapper import RegisterMapGenerator
+from device_firmware_gen import FirmwareGenerator
+
+rm = RegisterMapGenerator.fromJSON("generated/registers/regmap.json")
+FirmwareGenerator(rm).generate("generated/registers")
+```
+
+### 4) Messages only
+
+```python
+from device_messaging_gen import MessagingGenerator, Message, MessageGroup, MessageSeverity
+
+msgs = MessageGroup("comms")
+msgs.add(Message("timeout", MessageSeverity.ERROR))
+
+MessagingGenerator("my_module", [msgs]).generate("generated/messaging")
+```
+
+## Using Generated C++ Registers
+
+```cpp
+#include "generated/aura.hpp"
+
+void app_tick() {
+	using namespace regs;
+
+	// Scalar typed accessor
+	set_setpoint(12.5f);
+	float sp = get_setpoint();
+
+	// Banked register
+	set_samples(3, 1024u);
+	uint16_t s3 = get_samples(3);
+
+	// Bit-field accessor
+	set_control_enable(true);
+	set_control_gain(12u);
+	bool en = get_control_enable();
+
+	// Nested group register
+	set_axis_state_position(0, 1234);
+
+	// Counted-group direct storage access (instance methods)
+	regs.axis[1].state.set_position(5678);
+
+	(void)sp;
+	(void)s3;
+	(void)en;
+}
+```
+
+Notes:
+
+- Function names are path-based: group_subgroup_register
+- Counted ancestor groups add index parameters in order
+- Multi-word registers are exposed as typed get/set where possible
+
+## Using Generated C++ Messaging
+
+```cpp
+#include "generated/aura.hpp"
+
+static Messaging g_msgs;
+
+void init_messages() {
+	g_msgs.init();
+}
+
+void check_faults(bool fault_active) {
+	if (fault_active) {
+		g_msgs.add(msgs.motor[2].fault(), 0x1234u);
+	} else {
+		g_msgs.clear(msgs.motor[2].fault());
+	}
+
+	g_msgs.recalc_severity();
+	MessageSeverity sev = g_msgs.get_active_severity();
+	(void)sev;
+}
+```
+
+ID access styles:
+
+- Compile-time member ID: msgs.comms.timeout
+- Runtime indexed view ID: msgs.motor[2].fault()
+
+## Intro Firmware Example
+
+See the complete shell + register + messaging loop in:
+
+- examples/intro/firmware_main.cpp
+
+Build from that directory:
+
+```bash
+g++ -std=c++17 -I. firmware_main.cpp \
+	generated/registers/reg_storage.cpp \
+	generated/registers/reg_comm.cpp \
+	generated/registers/reg_doc.cpp \
+	generated/registers/reg_shell.cpp \
+	generated/messaging/msg.cpp \
+	generated/messaging/msg_strings.cpp \
+	-o firmware_main
+```
+
+## Running Tests (repo)
+
+```bash
+.venv/Scripts/pytest.exe register_mapper/tests/ device_firmware_gen/tests/ device_messaging_gen/tests/ -v
+```

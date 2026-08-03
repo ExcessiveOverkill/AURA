@@ -38,6 +38,7 @@
 |  | `↳ field1` | unsigned | rw | [3:0] | - | - | - | - | 4-bit unsigned field starting at bit 0 |
 |  | `↳ field2` | bool | rw | [4:4] | - | - | - | - | 1-bit boolean field at bit 4 |
 |  | `↳ field3` | unsigned | rw | [7:5] | - | - | - | - | 3-bit unsigned field starting at bit 5 |
+| 0x0080 | `command_u16_w` | unsigned | w | [15:0] | - | - | - | raw_cmd | write-only command register with fixed address and unit metadata |
 
 **Enum `enum_rw`:**
 
@@ -83,4 +84,15 @@
 | Address | Name | Type | R/W | Bits | Default | Min | Max | Unit | Description |
 |---------|------|------|-----|------|---------|-----|-----|------|-------------|
 | 0x004A | `reg4` | unsigned | rw | [7:0] | - | - | - | - | 8-bit unsigned integer register in multiple_groups |
+
+#### `aligned_group` — 0x0060–0x007F
+
+> Group with explicit alignment and unit-bearing registers
+
+**Alignment:** 32
+
+| Address | Name | Type | R/W | Bits | Default | Min | Max | Unit | Description |
+|---------|------|------|-----|------|---------|-----|-----|------|-------------|
+| 0x0060 | `current_limit` | unsigned | rw | [15:0] | 2500 | 0 | 5000 | mA | Current limit with units and explicit group alignment |
+| 0x0068 | `energy_wh` | unsigned | rw | [63:0] | 0 | 0 | 1000000 | Wh | Multi-word register with range/default and units |
 

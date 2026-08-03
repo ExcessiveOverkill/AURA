@@ -142,6 +142,18 @@ namespace regs {
     inline uint8_t get_array_of_4_u8(uint8_t idx) { return regs.array_of_4_u8.entries[idx]; }
     inline void set_array_of_4_u8(uint8_t idx, uint8_t v) { regs.array_of_4_u8.entries[idx] = v; }
 
+    // command_u16_w — unsigned 16-bit | write-only
+    //   write-only command register with fixed address and unit metadata
+    //   unit=raw_cmd
+    inline uint16_t get_command_u16_w() {
+        uint16_t v;
+        memcpy(&v, regs.command_u16_w.words, sizeof(uint16_t));
+        return v;
+    }
+    inline void set_command_u16_w(uint16_t v) {
+        memcpy(regs.command_u16_w.words, &v, sizeof(uint16_t));
+    }
+
     // register_with_bitfields — unsigned 16-bit | read-write
     //   Register with multiple bit fields
     //   Fields: field1[3:0], field2[4:4], field3[7:5]
@@ -193,6 +205,35 @@ namespace regs {
     inline bool get_group2_nested_group_reg3() { return regs.group2.nested_group.reg3.value != 0u; }
     inline void set_group2_nested_group_reg3(bool v) { regs.group2.nested_group.reg3.value = v ? 1u : 0u; }
 
-    // multiple_groups: count=4 — access via regs.multiple_groups[i]...
+    // multiple_groups: count=4 — access via get_/set_ with 'multiple_groups_idx'
+    // multiple_groups/reg4 — unsigned 8-bit | read-write
+    //   8-bit unsigned integer register in multiple_groups
+    inline uint8_t get_multiple_groups_reg4(uint8_t multiple_groups_idx) { return regs.multiple_groups.instances[multiple_groups_idx].reg4.value; }
+    inline void set_multiple_groups_reg4(uint8_t multiple_groups_idx, uint8_t v) { regs.multiple_groups.instances[multiple_groups_idx].reg4.value = v; }
+
+
+    // aligned_group/current_limit — unsigned 16-bit | read-write
+    //   Current limit with units and explicit group alignment
+    //   unit=mA, min=0, max=5000, default=2500
+    inline uint16_t get_aligned_group_current_limit() {
+        uint16_t v;
+        memcpy(&v, regs.aligned_group.current_limit.words, sizeof(uint16_t));
+        return v;
+    }
+    inline void set_aligned_group_current_limit(uint16_t v) {
+        memcpy(regs.aligned_group.current_limit.words, &v, sizeof(uint16_t));
+    }
+
+    // aligned_group/energy_wh — unsigned 64-bit | read-write
+    //   Multi-word register with range/default and units
+    //   unit=Wh, min=0, max=1000000, default=0
+    inline uint64_t get_aligned_group_energy_wh() {
+        uint64_t v;
+        memcpy(&v, regs.aligned_group.energy_wh.words, sizeof(uint64_t));
+        return v;
+    }
+    inline void set_aligned_group_energy_wh(uint64_t v) {
+        memcpy(regs.aligned_group.energy_wh.words, &v, sizeof(uint64_t));
+    }
 
 } // namespace regs

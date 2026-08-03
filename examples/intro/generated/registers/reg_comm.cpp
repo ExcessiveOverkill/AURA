@@ -42,11 +42,23 @@ namespace regs {
     static word_t group1_reg1_wbuf[2];
     static word_t group1_reg2_rbuf[4];
     static word_t group1_reg2_wbuf[4];
+    static word_t aligned_group_current_limit_rbuf[2];
+    static word_t aligned_group_current_limit_wbuf[2];
+    static word_t aligned_group_energy_wh_rbuf[8];
+    static word_t aligned_group_energy_wh_wbuf[8];
+    static word_t command_u16_w_rbuf[2];
+    static word_t command_u16_w_wbuf[2];
 
     // --- Default and range value arrays --------------------------
     static const word_t u32_with_limits_default[4] = { 0x32u, 0x0u, 0x0u, 0x0u };
     static const word_t u32_with_limits_min[4] = { 0x0u, 0x0u, 0x0u, 0x0u };
     static const word_t u32_with_limits_max[4] = { 0x64u, 0x0u, 0x0u, 0x0u };
+    static const word_t aligned_group_current_limit_default[2] = { 0xC4u, 0x9u };
+    static const word_t aligned_group_current_limit_min[2] = { 0x0u, 0x0u };
+    static const word_t aligned_group_current_limit_max[2] = { 0x88u, 0x13u };
+    static const word_t aligned_group_energy_wh_default[8] = { 0x0u, 0x0u, 0x0u, 0x0u, 0x0u, 0x0u, 0x0u, 0x0u };
+    static const word_t aligned_group_energy_wh_min[8] = { 0x0u, 0x0u, 0x0u, 0x0u, 0x0u, 0x0u, 0x0u, 0x0u };
+    static const word_t aligned_group_energy_wh_max[8] = { 0x40u, 0x42u, 0xFu, 0x0u, 0x0u, 0x0u, 0x0u, 0x0u };
 
     // --- Register info table -------------------------------------
     static const RegInfo reg_info[] = {
@@ -106,12 +118,18 @@ namespace regs {
         { regs.group1.reg1.words, group1_reg1_rbuf, group1_reg1_wbuf, nullptr, nullptr, nullptr, 2, 2, 0, RegAccess::READ_WRITE, RegType::UNSIGNED },
         // [27] group1_reg2 (bank 0)  @ 0x0054
         { regs.group1.reg2.words, group1_reg2_rbuf, group1_reg2_wbuf, nullptr, nullptr, nullptr, 4, 4, 0, RegAccess::READ_WRITE, RegType::FLOAT },
+        // [28] aligned_group_current_limit (bank 0)  @ 0x0060
+        { regs.aligned_group.current_limit.words, aligned_group_current_limit_rbuf, aligned_group_current_limit_wbuf, aligned_group_current_limit_default, aligned_group_current_limit_min, aligned_group_current_limit_max, 2, 2, 0, RegAccess::READ_WRITE, RegType::UNSIGNED },
+        // [29] aligned_group_energy_wh (bank 0)  @ 0x0068
+        { regs.aligned_group.energy_wh.words, aligned_group_energy_wh_rbuf, aligned_group_energy_wh_wbuf, aligned_group_energy_wh_default, aligned_group_energy_wh_min, aligned_group_energy_wh_max, 8, 8, 0, RegAccess::READ_WRITE, RegType::UNSIGNED },
+        // [30] command_u16_w (bank 0)  @ 0x0080
+        { regs.command_u16_w.words, command_u16_w_rbuf, command_u16_w_wbuf, nullptr, nullptr, nullptr, 2, 2, 0, RegAccess::WRITE, RegType::UNSIGNED },
     };
-    static constexpr uint16_t REG_INFO_COUNT = 28;
+    static constexpr uint16_t REG_INFO_COUNT = 31;
 
     // --- Flat address table --------------------------------------
-    // Direct-indexed by word address [0x0000 .. 0x0057].
-    static constexpr uint16_t REG_TABLE_SIZE = 88;
+    // Direct-indexed by word address [0x0000 .. 0x0081].
+    static constexpr uint16_t REG_TABLE_SIZE = 130;
     static const RegAddrSlot reg_table[REG_TABLE_SIZE] = {
         /* 0x0000 */ { &reg_info[0], 0 },
         /* 0x0001 */ { &reg_info[0], 1 },
@@ -201,6 +219,48 @@ namespace regs {
         /* 0x0055 */ { &reg_info[27], 1 },
         /* 0x0056 */ { &reg_info[27], 2 },
         /* 0x0057 */ { &reg_info[27], 3 },
+        /* 0x0058 */ { nullptr, 0 },
+        /* 0x0059 */ { nullptr, 0 },
+        /* 0x005A */ { nullptr, 0 },
+        /* 0x005B */ { nullptr, 0 },
+        /* 0x005C */ { nullptr, 0 },
+        /* 0x005D */ { nullptr, 0 },
+        /* 0x005E */ { nullptr, 0 },
+        /* 0x005F */ { nullptr, 0 },
+        /* 0x0060 */ { &reg_info[28], 0 },
+        /* 0x0061 */ { &reg_info[28], 1 },
+        /* 0x0062 */ { nullptr, 0 },
+        /* 0x0063 */ { nullptr, 0 },
+        /* 0x0064 */ { nullptr, 0 },
+        /* 0x0065 */ { nullptr, 0 },
+        /* 0x0066 */ { nullptr, 0 },
+        /* 0x0067 */ { nullptr, 0 },
+        /* 0x0068 */ { &reg_info[29], 0 },
+        /* 0x0069 */ { &reg_info[29], 1 },
+        /* 0x006A */ { &reg_info[29], 2 },
+        /* 0x006B */ { &reg_info[29], 3 },
+        /* 0x006C */ { &reg_info[29], 4 },
+        /* 0x006D */ { &reg_info[29], 5 },
+        /* 0x006E */ { &reg_info[29], 6 },
+        /* 0x006F */ { &reg_info[29], 7 },
+        /* 0x0070 */ { nullptr, 0 },
+        /* 0x0071 */ { nullptr, 0 },
+        /* 0x0072 */ { nullptr, 0 },
+        /* 0x0073 */ { nullptr, 0 },
+        /* 0x0074 */ { nullptr, 0 },
+        /* 0x0075 */ { nullptr, 0 },
+        /* 0x0076 */ { nullptr, 0 },
+        /* 0x0077 */ { nullptr, 0 },
+        /* 0x0078 */ { nullptr, 0 },
+        /* 0x0079 */ { nullptr, 0 },
+        /* 0x007A */ { nullptr, 0 },
+        /* 0x007B */ { nullptr, 0 },
+        /* 0x007C */ { nullptr, 0 },
+        /* 0x007D */ { nullptr, 0 },
+        /* 0x007E */ { nullptr, 0 },
+        /* 0x007F */ { nullptr, 0 },
+        /* 0x0080 */ { &reg_info[30], 0 },
+        /* 0x0081 */ { &reg_info[30], 1 },
     };
 
     // --- Range comparison helpers --------------------------------

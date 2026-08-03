@@ -600,7 +600,7 @@ class FirmwareGenerator:
             w.blank()
 
             w.separator("Register accessors")
-            self._emit_accessor_nodes(w, self._device_tree, [], [])
+            self._emit_accessor_nodes(w, self._device_tree, [], [], [])
 
             w.close_namespace(self._ns())
 
@@ -665,20 +665,48 @@ class FirmwareGenerator:
             return f"{storage} = static_cast<{wt}>(v) & 0x{mask:X}u;"
         return f"{storage} = static_cast<{wt}>(v);"
 
-    def _emit_accessor_nodes(self, w: CppWriter, nodes: list, struct_path: list, fn_parts: list):
+    def _emit_accessor_nodes(
+        self,
+        w: CppWriter,
+        nodes: list,
+        struct_path: list,
+        fn_parts: list,
+        group_idx_params: list,
+    ):
         for node in nodes:
             if isinstance(node, DeviceGroupNode):
                 if node.count > 1:
-                    w.comment(f"{node.name}: count={node.count} — access via regs.{node.name}[i]...")
+                    idx_name = "_".join(fn_parts + [node.name, "idx"])
+                    w.comment(
+                        f"{node.name}: count={node.count} — access via get_/set_ with '{idx_name}'"
+                    )
+                    self._emit_accessor_nodes(
+                        w,
+                        node.children,
+                        struct_path + [f"{node.name}.instances[{idx_name}]"],
+                        fn_parts + [node.name],
+                        group_idx_params + [idx_name],
+                    )
                     w.blank()
                 else:
                     self._emit_accessor_nodes(
-                        w, node.children, struct_path + [node.name], fn_parts + [node.name]
+                        w,
+                        node.children,
+                        struct_path + [node.name],
+                        fn_parts + [node.name],
+                        group_idx_params,
                     )
             elif isinstance(node, DeviceRegNode):
-                self._emit_reg_accessors(w, node, struct_path, fn_parts)
+                self._emit_reg_accessors(w, node, struct_path, fn_parts, group_idx_params)
 
-    def _emit_reg_accessors(self, w: CppWriter, node: DeviceRegNode, struct_path: list, fn_parts: list):
+    def _emit_reg_accessors(
+        self,
+        w: CppWriter,
+        node: DeviceRegNode,
+        struct_path: list,
+        fn_parts: list,
+        group_idx_params: list,
+    ):
         reg = node.reg
         bs = node.bank_size
         wpr = reg.words_per_register
@@ -696,15 +724,18 @@ class FirmwareGenerator:
         bank_note = f" (bank_size={bs})" if bs > 1 else ""
         self._emit_reg_doc(w, reg, f"{path_str} — {reg.type} {reg.width}-bit{bank_note} | {rw_label}")
 
+        idx_params = ", ".join(f"uint8_t {name}" for name in group_idx_params)
+        idx_prefix = f"{idx_params}, " if idx_params else ""
+
         if bs == 1 and wpr == 1:
             if can_read:
                 w.inline_function(
-                    f"{val_type} get_{fn_base}()",
+                    f"{val_type} get_{fn_base}({idx_params})" if idx_params else f"{val_type} get_{fn_base}()",
                     self._sw_get(reg, val_type, f"{mem_base}.value"),
                 )
             if can_write:
                 w.inline_function(
-                    f"void set_{fn_base}({val_type} v)",
+                    f"void set_{fn_base}({idx_prefix}{val_type} v)",
                     self._sw_set(reg, val_type, f"{mem_base}.value"),
                 )
 
@@ -714,23 +745,27 @@ class FirmwareGenerator:
                 # Typed return-by-value via memcpy.
                 sz = f"sizeof({val_type})"
                 if can_read:
-                    w.open_function(f"inline {val_type} get_{fn_base}()")
+                    w.open_function(
+                        f"inline {val_type} get_{fn_base}({idx_params})"
+                        if idx_params
+                        else f"inline {val_type} get_{fn_base}()"
+                    )
                     w.line(f"{val_type} v;")
                     w.line(f"memcpy(&v, {mem_base}.words, {sz});")
                     w.line("return v;")
                     w.close_function()
                 if can_write:
-                    w.open_function(f"inline void set_{fn_base}({val_type} v)")
+                    w.open_function(f"inline void set_{fn_base}({idx_prefix}{val_type} v)")
                     w.line(f"memcpy({mem_base}.words, &v, {sz});")
                     w.close_function()
             else:
                 # Fallback bulk copy with word_t* buffer.
                 if can_read:
-                    w.open_function(f"inline void get_{fn_base}(word_t* out)")
+                    w.open_function(f"inline void get_{fn_base}({idx_prefix}word_t* out)")
                     w.line(f"for (uint8_t i = 0; i < {wpr}; ++i) out[i] = {mem_base}.words[i];")
                     w.close_function()
                 if can_write:
-                    w.open_function(f"inline void set_{fn_base}(const word_t* data)")
+                    w.open_function(f"inline void set_{fn_base}({idx_prefix}const word_t* data)")
                     w.line(f"for (uint8_t i = 0; i < {wpr}; ++i) {mem_base}.words[i] = data[i];")
                     w.close_function()
 
@@ -738,12 +773,12 @@ class FirmwareGenerator:
             # Bank, single-word.
             if can_read:
                 w.inline_function(
-                    f"{val_type} get_{fn_base}(uint8_t idx)",
+                    f"{val_type} get_{fn_base}({idx_prefix}uint8_t idx)",
                     self._sw_get(reg, val_type, f"{mem_base}.entries[idx]"),
                 )
             if can_write:
                 w.inline_function(
-                    f"void set_{fn_base}(uint8_t idx, {val_type} v)",
+                    f"void set_{fn_base}({idx_prefix}uint8_t idx, {val_type} v)",
                     self._sw_set(reg, val_type, f"{mem_base}.entries[idx]"),
                 )
 
@@ -752,28 +787,38 @@ class FirmwareGenerator:
             if val_type not in ("word_t", self._word_type) or reg.type in ("float", "double"):
                 sz = f"sizeof({val_type})"
                 if can_read:
-                    w.open_function(f"inline {val_type} get_{fn_base}(uint8_t idx)")
+                    w.open_function(f"inline {val_type} get_{fn_base}({idx_prefix}uint8_t idx)")
                     w.line(f"{val_type} v;")
                     w.line(f"memcpy(&v, {mem_base}.entries[idx], {sz});")
                     w.line("return v;")
                     w.close_function()
                 if can_write:
-                    w.open_function(f"inline void set_{fn_base}(uint8_t idx, {val_type} v)")
+                    w.open_function(f"inline void set_{fn_base}({idx_prefix}uint8_t idx, {val_type} v)")
                     w.line(f"memcpy({mem_base}.entries[idx], &v, {sz});")
                     w.close_function()
             else:
                 if can_read:
-                    w.open_function(f"inline void get_{fn_base}(uint8_t idx, word_t* out)")
+                    w.open_function(f"inline void get_{fn_base}({idx_prefix}uint8_t idx, word_t* out)")
                     w.line(f"for (uint8_t i = 0; i < {wpr}; ++i) out[i] = {mem_base}.entries[idx][i];")
                     w.close_function()
                 if can_write:
-                    w.open_function(f"inline void set_{fn_base}(uint8_t idx, const word_t* data)")
+                    w.open_function(f"inline void set_{fn_base}({idx_prefix}uint8_t idx, const word_t* data)")
                     w.line(f"for (uint8_t i = 0; i < {wpr}; ++i) {mem_base}.entries[idx][i] = data[i];")
                     w.close_function()
 
         if reg.bit_field and bs == 1:
             for field_name, field in reg.bit_field.items():
-                self._emit_bitfield_accessor(w, field_name, field, fn_base, mem_base, wpr, reg.width)
+                self._emit_bitfield_accessor(
+                    w,
+                    field_name,
+                    field,
+                    fn_base,
+                    mem_base,
+                    wpr,
+                    reg.width,
+                    getter_const=False,
+                    idx_params=group_idx_params,
+                )
 
         w.blank()
 
@@ -787,6 +832,7 @@ class FirmwareGenerator:
         reg_wpr: int,
         reg_width: int,
         getter_const: bool = False,
+        idx_params: list | None = None,
     ):
         start_bit = field.starting_bit
         width = field.width
@@ -823,15 +869,21 @@ class FirmwareGenerator:
         storage = f"{mem_base}.value" if reg_wpr == 1 else f"{mem_base}.words[{word_idx}]"
 
         const_suffix = " const" if getter_const else ""
+        idx_params = idx_params or []
+        idx_sig = ", ".join(f"uint8_t {name}" for name in idx_params)
+        idx_prefix = f"{idx_sig}, " if idx_sig else ""
 
         if field.type == "bool":
             bit_mask = f"({mask_hex} << {bit_in_word})" if bit_in_word else mask_hex
             raw = f"{storage} & {bit_mask}" if bit_in_word == 0 else f"({storage} >> {bit_in_word}) & {mask_hex}"
             if do_read:
-                w.inline_function(f"bool get_{fn_name}(){const_suffix}", f"return ({raw}) != 0u;")
+                w.inline_function(
+                    f"bool get_{fn_name}({idx_sig}){const_suffix}" if idx_sig else f"bool get_{fn_name}(){const_suffix}",
+                    f"return ({raw}) != 0u;",
+                )
             if do_write:
                 w.inline_function(
-                    f"void set_{fn_name}(bool v)",
+                    f"void set_{fn_name}({idx_prefix}bool v)",
                     f"{storage} = ({storage} & ~{bit_mask}) | (v ? {bit_mask} : 0u);",
                 )
             return
@@ -860,9 +912,12 @@ class FirmwareGenerator:
             )
 
         if do_read:
-            w.inline_function(f"{fvt} get_{fn_name}(){const_suffix}", get_expr)
+            w.inline_function(
+                f"{fvt} get_{fn_name}({idx_sig}){const_suffix}" if idx_sig else f"{fvt} get_{fn_name}(){const_suffix}",
+                get_expr,
+            )
         if do_write:
-            w.inline_function(f"void set_{fn_name}({fvt} v)", set_expr)
+            w.inline_function(f"void set_{fn_name}({idx_prefix}{fvt} v)", set_expr)
 
     def _emit_struct_reg_accessors(self, w: CppWriter, node: DeviceRegNode):
         """Emit inline get/set methods for one register inside a struct body."""

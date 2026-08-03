@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from aura import (
     AURADevice,
+    ProtocolInterface,
     Register,
     Group,
     Message,
@@ -26,7 +27,7 @@ device = AURADevice(
     word_width=8,  # The device's minimum addressable width (bits). Usually 8.
     compatible_drivers=["aura-intro"],  # Used by the host to identify which driver to load for this device, multiple may be specified.
     desc="Introductory example for AURA",   # Description of the device, used in generated code and documentation.
-    interfaces="shell",   # Optional list of interfaces to generate code for, currently supports "shell" for generating a device shell and host shim. Multiple may be specified.
+    interfaces=[ProtocolInterface.SHELL],   # Optional list of interfaces to generate code for, currently supports "shell" for generating a device shell and host shim. Multiple may be specified.
 )
 
 rm = device.regmap
@@ -184,6 +185,17 @@ rm.add(Register(
     desc="array of 4 uint8 registers"
 ))
 
+# explicit address placement + write-only register + unit metadata
+rm.add(Register(
+    "command_u16_w",
+    rw="w",
+    type="unsigned",
+    width=16,
+    start_address=0x80,
+    unit="raw_cmd",
+    desc="write-only command register with fixed address and unit metadata"
+))
+
 
 # register bit fields (sub-registers)
 # registers can be broken down into bit fields, which are sub-registers that occupy a portion of the parent register's width, and share the same address as the parent register (for single word registers, multi-word will have more complex addressing but the same concept applies)
@@ -256,6 +268,38 @@ multiple_groups.add(Register(
 ))
 rm.add(multiple_groups)
 
+# group with explicit alignment and unit-bearing registers
+aligned_group = Group(
+    "aligned_group",
+    desc="Group with explicit alignment and unit-bearing registers",
+    alignment=0x20,
+)
+aligned_group.add(Register(
+    "current_limit",
+    rw="rw",
+    type="unsigned",
+    width=16,
+    min_val=0,
+    max_val=5000,
+    default_val=2500,
+    unit="mA",
+    desc="Current limit with units and explicit group alignment",
+))
+aligned_group.add(Register(
+    "energy_wh",
+    rw="rw",
+    type="unsigned",
+    width=64,
+    min_val=0,
+    max_val=1_000_000,
+    default_val=0,
+    unit="Wh",
+    desc="Multi-word register with range/default and units",
+))
+rm.add(aligned_group)
+
+# fixed-address option is demonstrated above with command_u16_w.start_address.
+
 
 # 
 # ---------------------------------------------------------------------------
@@ -280,7 +324,90 @@ comms_msgs.add(Message(
     desc="Host communication watchdog expired",
 ))
 
-device.messages.extend([drive_msgs, comms_msgs])
+system_msgs = MessageGroup("system")
+system_msgs.add(Message(
+    "boot",
+    MessageSeverity.MESSAGE,
+    desc="Boot complete",
+)).add(Message(
+    "idle",
+    MessageSeverity.NONE,
+    desc="System idle marker",
+))
+
+power_msgs = MessageGroup("power")
+power_msgs.add(Message(
+    "low_voltage",
+    MessageSeverity.WARNING,
+    delay_us=20_000,
+    desc="DC bus low",
+)).add(Message(
+    "over_voltage",
+    MessageSeverity.ERROR,
+    desc="DC bus high",
+))
+system_msgs.add(power_msgs)
+
+motor_msgs = MessageGroup("motor", count=2)
+motor_msgs.add(Message(
+    "fault",
+    MessageSeverity.ERROR,
+    desc="Motor fault",
+)).add(Message(
+    "overtemp",
+    MessageSeverity.WARNING,
+    delay_us=50_000,
+    desc="Motor temperature high",
+))
+
+safety_msgs = MessageGroup("safety")
+safety_msgs.add(Message(
+    "watchdog",
+    MessageSeverity.CRITICAL,
+    desc="Watchdog timeout",
+))
+
+device.messages.extend([drive_msgs, comms_msgs, system_msgs, motor_msgs, safety_msgs])
+
+
+# ---------------------------------------------------------------------------
+# README generation-mode snippets (reference only, not executed)
+# ---------------------------------------------------------------------------
+
+def _registers_only_pipeline_reference() -> None:
+    """Example of standalone register pipeline from README."""
+    from register_mapper import RegisterMapGenerator
+    from device_firmware_gen import FirmwareGenerator
+
+    rm_ref = RegisterMapGenerator("intro_ref", compatible_drivers=["aura-intro"], word_width=8)
+    rm_ref.add(Register("status", rw="r", type="unsigned", width=8))
+
+    # Reference-only: explicit group start_address + alignment option.
+    g_ref = Group("periph", start_address=0x40, alignment=0x10)
+    g_ref.add(Register("value", rw="rw", type="unsigned", width=16))
+    rm_ref.add(g_ref)
+
+    rm_ref.generate()
+    rm_ref.exportJSON("generated/registers/regmap.json")
+    FirmwareGenerator(rm_ref).generate("generated/registers")
+
+
+def _registers_from_json_reference() -> None:
+    """Example of loading register map from JSON then regenerating firmware files."""
+    from register_mapper import RegisterMapGenerator
+    from device_firmware_gen import FirmwareGenerator
+
+    rm_ref = RegisterMapGenerator.fromJSON("generated/registers/regmap.json")
+    FirmwareGenerator(rm_ref).generate("generated/registers")
+
+
+def _messages_only_pipeline_reference() -> None:
+    """Example of standalone messaging generation from README."""
+    from device_messaging_gen import MessagingGenerator
+
+    only_msgs = MessageGroup("comms")
+    only_msgs.add(Message("timeout", MessageSeverity.ERROR))
+    MessagingGenerator("intro_ref", [only_msgs]).generate("generated/messaging")
 
 # ---------------------------------------------------------------------------
 # Generate

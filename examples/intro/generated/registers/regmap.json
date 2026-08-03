@@ -124,9 +124,73 @@
                         "rw": "rw"
                     }
                 }
+            },
+            "aligned_group": {
+                "name": "aligned_group",
+                "address_offset": 96,
+                "description": "Group with explicit alignment and unit-bearing registers",
+                "alignment": 32,
+                "count": 1,
+                "groups": {},
+                "registers": {
+                    "current_limit": {
+                        "name": "current_limit",
+                        "address_offset": 0,
+                        "type": "unsigned",
+                        "bank_size": 1,
+                        "description": "Current limit with units and explicit group alignment",
+                        "width": 16,
+                        "word_width": 8,
+                        "words_per_register": 2,
+                        "starting_bit": 0,
+                        "bit_field": {},
+                        "enum": {},
+                        "min": 0,
+                        "max": 5000,
+                        "default": 2500,
+                        "unit": "mA",
+                        "rw": "rw"
+                    },
+                    "energy_wh": {
+                        "name": "energy_wh",
+                        "address_offset": 8,
+                        "type": "unsigned",
+                        "bank_size": 1,
+                        "description": "Multi-word register with range/default and units",
+                        "width": 64,
+                        "word_width": 8,
+                        "words_per_register": 8,
+                        "starting_bit": 0,
+                        "bit_field": {},
+                        "enum": {},
+                        "min": 0,
+                        "max": 1000000,
+                        "default": 0,
+                        "unit": "Wh",
+                        "rw": "rw"
+                    }
+                }
             }
         },
         "registers": {
+            "command_u16_w": {
+                "name": "command_u16_w",
+                "address_offset": 128,
+                "type": "unsigned",
+                "bank_size": 1,
+                "description": "write-only command register with fixed address and unit metadata",
+                "width": 16,
+                "word_width": 8,
+                "words_per_register": 2,
+                "starting_bit": 0,
+                "bit_field": {},
+                "enum": {},
+                "min": null,
+                "max": null,
+                "default": null,
+                "unit": "raw_cmd",
+                "rw": "w"
+            },
             "basic_u32_rw": {
                 "name": "basic_u32_rw",
                 "address_offset": 0,

@@ -9,8 +9,8 @@
 #include "reg_doc_types.hpp"
 
 // --- Table-size constants ------------------------------------
-constexpr uint16_t REG_DOC_COUNT       = 19;
-constexpr uint8_t  REG_DOC_GROUP_COUNT = 4;
+constexpr uint16_t REG_DOC_COUNT       = 22;
+constexpr uint8_t  REG_DOC_GROUP_COUNT = 5;
 constexpr uint8_t  REG_DOC_BF_COUNT    = 3;
 constexpr uint16_t REG_DOC_ENUM_COUNT  = 3;
 

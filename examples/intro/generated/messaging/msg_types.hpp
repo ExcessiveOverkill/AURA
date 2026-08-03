@@ -15,13 +15,23 @@
 #endif // MSG_GET_TIME_US
 
 // --- Constants -----------------------------------------------
-constexpr uint16_t MESSAGE_COUNT = 3;
+constexpr uint16_t MESSAGE_COUNT = 12;
+constexpr uint16_t UNIQUE_MSG_COUNT = 10;
 
 // --- MessageId enum ------------------------------------------
 enum class MessageId : uint16_t {
     DRIVE__FAULT = 0,
     DRIVE__OVERTEMP = 1,
-    COMMS__TIMEOUT = 2
+    COMMS__TIMEOUT = 2,
+    SYSTEM__BOOT = 3,
+    SYSTEM__IDLE = 4,
+    SYSTEM__POWER__LOW_VOLTAGE = 5,
+    SYSTEM__POWER__OVER_VOLTAGE = 6,
+    MOTOR_0__FAULT = 7,
+    MOTOR_0__OVERTEMP = 8,
+    MOTOR_1__FAULT = 9,
+    MOTOR_1__OVERTEMP = 10,
+    SAFETY__WATCHDOG = 11
 };
 
 // --- MessageSeverity enum ------------------------------------
@@ -74,7 +84,7 @@ const char* severity_label(MessageSeverity s);
 // --- Group node tree  (compressed hierarchy — one string per segment) 
 // Each node stores its segment name and parent index (-1 = root level).
 // Reconstruct full paths by walking parent links up to -1.
-constexpr int8_t GROUP_COUNT = 2;
+constexpr int8_t GROUP_COUNT = 6;
 
 struct GroupNode {
     const char* name;
@@ -90,7 +100,7 @@ int8_t      group_parent(int8_t group_idx);
 
 // --- Compile-time ID accessors — C++17 required --------------
 // Access message IDs via dot notation at zero runtime cost.
-// Example: msgs.system.power.low_voltage
+// Instanced groups: msgs.motor[i].fault
 
 struct _Msg_Drive_View {
     MessageId base_msg_id;
@@ -101,6 +111,29 @@ struct _Msg_Drive_View {
 struct _Msg_Comms_View {
     MessageId base_msg_id;
     MessageId timeout() const { return MessageId(static_cast<uint16_t>(base_msg_id) + 0); }
+};
+
+struct _Msg_System_View {
+    MessageId base_msg_id;
+    MessageId boot() const { return MessageId(static_cast<uint16_t>(base_msg_id) + 0); }
+    MessageId idle() const { return MessageId(static_cast<uint16_t>(base_msg_id) + 1); }
+};
+
+struct _Msg_System_Power_View {
+    MessageId base_msg_id;
+    MessageId low_voltage() const { return MessageId(static_cast<uint16_t>(base_msg_id) + 0); }
+    MessageId over_voltage() const { return MessageId(static_cast<uint16_t>(base_msg_id) + 1); }
+};
+
+struct _Msg_Motor_View {
+    MessageId base_msg_id;
+    MessageId fault() const { return MessageId(static_cast<uint16_t>(base_msg_id) + 0); }
+    MessageId overtemp() const { return MessageId(static_cast<uint16_t>(base_msg_id) + 1); }
+};
+
+struct _Msg_Safety_View {
+    MessageId base_msg_id;
+    MessageId watchdog() const { return MessageId(static_cast<uint16_t>(base_msg_id) + 0); }
 };
 
 struct _Msg_Drive {
@@ -120,9 +153,47 @@ struct _Msg_Comms {
     }
 };
 
+struct _Msg_System_Power {
+    static constexpr MessageId low_voltage = MessageId(5);
+    static constexpr MessageId over_voltage = MessageId(6);
+
+    _Msg_System_Power_View operator[](uint8_t idx) const {
+        return _Msg_System_Power_View{.base_msg_id = MessageId(static_cast<uint16_t>(5) + static_cast<uint16_t>(idx) * 2)};
+    }
+};
+
+struct _Msg_System {
+    static constexpr MessageId boot = MessageId(3);
+    static constexpr MessageId idle = MessageId(4);
+    static constexpr _Msg_System_Power power{};
+
+    _Msg_System_View operator[](uint8_t idx) const {
+        return _Msg_System_View{.base_msg_id = MessageId(static_cast<uint16_t>(3) + static_cast<uint16_t>(idx) * 4)};
+    }
+};
+
+struct _Msg_Motor {
+    MessageId fault;
+    MessageId overtemp;
+};
+
+struct _Msg_Safety {
+    static constexpr MessageId watchdog = MessageId(11);
+
+    _Msg_Safety_View operator[](uint8_t idx) const {
+        return _Msg_Safety_View{.base_msg_id = MessageId(static_cast<uint16_t>(11) + static_cast<uint16_t>(idx) * 1)};
+    }
+};
+
 struct _Msg {
     static constexpr _Msg_Drive drive{};
     static constexpr _Msg_Comms comms{};
+    static constexpr _Msg_System system{};
+    static constexpr _Msg_Motor motor[2] = {
+        { MessageId(7), MessageId(8) },
+        { MessageId(9), MessageId(10) },
+    };
+    static constexpr _Msg_Safety safety{};
 };
 
 inline constexpr _Msg msgs{};
