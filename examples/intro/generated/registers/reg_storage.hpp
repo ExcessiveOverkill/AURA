@@ -8,7 +8,7 @@
 #include "reg_types.hpp"
 #include <cstring>
 
-namespace regs {
+namespace Regs {
 
     // --- Register and group struct types -------------------------
     // basic_u32_rw — unsigned 32-bit | read-write
@@ -389,4 +389,4 @@ namespace regs {
     template <typename T>
     inline void set(T& reg, const word_t* data) { reg.set(data); }
 
-} // namespace regs
+} // namespace Regs

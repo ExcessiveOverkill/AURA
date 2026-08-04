@@ -83,7 +83,7 @@ static Messaging g_msgs;
 static uint32_t s_tick = 0;
 
 static void app_demo_accessors_once() {
-    using namespace regs;
+    using namespace Regs;
 
     // Scalar registers (typed get/set wrappers).
     set_basic_u32_rw(123u);
@@ -121,13 +121,13 @@ static void app_demo_accessors_once() {
     set_group2_nested_group_reg3(true);
 
     // Counted group access through storage instance methods.
-    ::regs::regs.multiple_groups[2].set_reg4(0x5Au);
-    const uint8_t reg4_v = ::regs::regs.multiple_groups[2].get_reg4();
+    ::Regs::regs.multiple_groups[2].set_reg4(0x5Au);
+    const uint8_t reg4_v = ::Regs::regs.multiple_groups[2].get_reg4();
     set_array_of_4_u8(2, reg4_v);
 
     // Object-oriented direct access through the top-level regs struct.
     // This style supports hierarchical group traversal and bank indexing.
-    auto& regmap = ::regs::regs;
+    auto& regmap = ::Regs::regs;
 
     // Single-value (sub-word) register.
     regmap.uint12_rw.set(9u);
@@ -207,7 +207,7 @@ static void app_demo_accessors_once() {
 }
 
 static void app_update() {
-    using namespace regs;
+    using namespace Regs;
 
     // Drive basic_u32_r as a simulated read-only sensor value (firmware writes it).
     set_basic_u32_r(20u + (s_tick % 80u));
@@ -215,8 +215,8 @@ static void app_update() {
     // Example: instanced-group inline methods on the raw storage struct.
     // These methods are generated on MultipleGroupsInstance_t and are fully inline.
     const uint8_t group_idx = static_cast<uint8_t>((s_tick / 25u) & 0x03u);
-    ::regs::regs.multiple_groups[group_idx].set_reg4(static_cast<uint8_t>(s_tick & 0xFFu));
-    const uint8_t reg4_shadow = ::regs::regs.multiple_groups[group_idx].get_reg4();
+    ::Regs::regs.multiple_groups[group_idx].set_reg4(static_cast<uint8_t>(s_tick & 0xFFu));
+    const uint8_t reg4_shadow = ::Regs::regs.multiple_groups[group_idx].get_reg4();
 
     // Feed the value through a regular typed accessor to show both styles coexist.
     set_array_of_4_u8(group_idx, reg4_shadow);

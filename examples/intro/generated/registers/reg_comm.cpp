@@ -7,7 +7,7 @@
 #include "reg_storage.hpp"
 #include <cstring>
 
-namespace regs {
+namespace Regs {
 
     // --- Multi-word register buffers -----------------------------
     static word_t basic_u32_rw_rbuf[4];
@@ -465,4 +465,4 @@ namespace regs {
         }
     }
 
-} // namespace regs
+} // namespace Regs

@@ -136,11 +136,11 @@ class TestWordEncode:
 
 class TestNsAndPrefix:
     def test_ns_format(self, gen):
-        assert gen._ns() == "regs"
+        assert gen._ns() == "Regs"
 
     def test_ns_contains_module_name(self, gen):
         # Namespace is now fixed — does not contain the module name
-        assert gen._ns() == "regs"
+        assert gen._ns() == "Regs"
 
     def test_filepath_construction(self, gen):
         result = gen._filepath("/out", "foo.hpp")
@@ -148,9 +148,9 @@ class TestNsAndPrefix:
         assert result == os.path.join("/out", "foo.hpp")
 
     def test_module_name_normalised(self):
-        # Module name normalisation is internal; _ns() is always "regs"
+        # Module name normalisation is internal; _ns() is always "Regs"
         rm = RegisterMapGenerator("My-Module Name", [], word_width=32)
         rm.add(Register("r", rw="r", type="unsigned", width=8))
         rm.generate()
         g = FirmwareGenerator(rm)
-        assert g._ns() == "regs"
+        assert g._ns() == "Regs"

@@ -239,7 +239,7 @@ MessagingGenerator("my_module", [msgs]).generate("generated/messaging")
 #include "generated/aura.hpp"
 
 void app_tick() {
-	using namespace regs;
+	using namespace Regs;
 
 	// Scalar typed accessor
 	set_setpoint(12.5f);
@@ -274,13 +274,13 @@ Notes:
 
 ### Object-Oriented Access via Main regs Struct
 
-When you want direct struct traversal instead of generated free-function wrappers, access the storage root at `::regs::regs`.
+When you want direct struct traversal instead of generated free-function wrappers, access the storage root at `::Regs::regs`.
 
 ```cpp
 #include "generated/aura.hpp"
 
 void demo_direct_storage_access() {
-	auto& regmap = ::regs::regs;
+	auto& regmap = ::Regs::regs;
 
 	// Scalar field
 	regmap.uint12_rw.set(9u);

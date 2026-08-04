@@ -124,7 +124,7 @@ class TestCorrectness:
         FirmwareGenerator(simple_rm).generate(out_dir)
         path = os.path.join(out_dir, "reg_types.hpp")
         content = open(path, encoding="utf-8").read()
-        assert "regs" in content
+        assert "Regs" in content
 
     def test_generate_from_json_smoke(self, json_rm, out_dir):
         FirmwareGenerator(json_rm).generate(out_dir)
@@ -228,12 +228,12 @@ class TestCompilation:
 #include "reg_storage.hpp"
 
 int main() {
-    regs::regs.periph[0].set_enable(true);
-    bool e0 = regs::regs.periph[0].get_enable();
-    regs::regs.periph[1].set_value(static_cast<uint16_t>(123));
-    uint16_t v1 = regs::regs.periph[1].get_value();
+    Regs::regs.periph[0].set_enable(true);
+    bool e0 = Regs::regs.periph[0].get_enable();
+    Regs::regs.periph[1].set_value(static_cast<uint16_t>(123));
+    uint16_t v1 = Regs::regs.periph[1].get_value();
 
-    const auto& periph_const = regs::regs.periph;
+    const auto& periph_const = Regs::regs.periph;
     uint16_t v_const = periph_const[1].get_value();
 
     (void)e0;
@@ -269,8 +269,8 @@ int main() {
 #include "reg_device.hpp"
 
 int main() {
-    regs::set_outer_inner_leaf(1, 2, static_cast<uint8_t>(0x5A));
-    uint8_t v = regs::get_outer_inner_leaf(1, 2);
+    Regs::set_outer_inner_leaf(1, 2, static_cast<uint8_t>(0x5A));
+    uint8_t v = Regs::get_outer_inner_leaf(1, 2);
     (void)v;
     return 0;
 }

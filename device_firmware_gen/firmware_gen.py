@@ -2658,7 +2658,7 @@ class FirmwareGenerator:
 
     def _ns(self) -> str:
         """C++ namespace that wraps all generated symbols."""
-        return "regs"
+        return "Regs"
 
     def _filepath(self, output_dir: str, suffix: str) -> str:
         return os.path.join(output_dir, suffix)

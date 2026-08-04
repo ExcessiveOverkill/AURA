@@ -8,7 +8,7 @@
 #include "reg_storage.hpp"
 #include <cstring>
 
-namespace regs {
+namespace Regs {
 
     // --- Register accessors --------------------------------------
     // basic_u32_rw — unsigned 32-bit | read-write
@@ -236,4 +236,4 @@ namespace regs {
         memcpy(regs.aligned_group.energy_wh.words, &v, sizeof(uint64_t));
     }
 
-} // namespace regs
+} // namespace Regs

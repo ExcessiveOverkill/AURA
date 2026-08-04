@@ -17,178 +17,178 @@
 int reg_verify() {
     // basic_u32_rw: unsigned 32-bit | rw | bank=1 | wpr=4
     {
-        regs::reg_reset();
+        Regs::reg_reset();
         uint32_t _tv = static_cast<uint32_t>(171u);
-        regs::set_basic_u32_rw(_tv);
-        REG_VERIFY_ASSERT(regs::get_basic_u32_rw() == _tv);
+        Regs::set_basic_u32_rw(_tv);
+        REG_VERIFY_ASSERT(Regs::get_basic_u32_rw() == _tv);
     }
 
     // basic_u32_r: unsigned 32-bit | r | bank=1 | wpr=4
     {
-        regs::reg_reset();
+        Regs::reg_reset();
         uint32_t _tv = static_cast<uint32_t>(171u);
-        regs::set_basic_u32_r(_tv);
-        REG_VERIFY_ASSERT(regs::get_basic_u32_r() == _tv);
+        Regs::set_basic_u32_r(_tv);
+        REG_VERIFY_ASSERT(Regs::get_basic_u32_r() == _tv);
     }
 
     // u32_with_limits: unsigned 32-bit | rw | bank=1 | wpr=4
     {
-        regs::reg_reset();
+        Regs::reg_reset();
         uint32_t _tv = static_cast<uint32_t>(171u);
-        regs::set_u32_with_limits(_tv);
-        REG_VERIFY_ASSERT(regs::get_u32_with_limits() == _tv);
+        Regs::set_u32_with_limits(_tv);
+        REG_VERIFY_ASSERT(Regs::get_u32_with_limits() == _tv);
     }
 
     // uint12_rw: unsigned 4-bit | rw | bank=1 | wpr=1
     {
-        regs::reg_reset();
-        regs::set_uint12_rw(static_cast<uint8_t>(11u));
-        REG_VERIFY_ASSERT(regs::get_uint12_rw() == static_cast<uint8_t>(11u));
+        Regs::reg_reset();
+        Regs::set_uint12_rw(static_cast<uint8_t>(11u));
+        REG_VERIFY_ASSERT(Regs::get_uint12_rw() == static_cast<uint8_t>(11u));
     }
 
     // uint64_rw: unsigned 64-bit | rw | bank=1 | wpr=8
     {
-        regs::reg_reset();
+        Regs::reg_reset();
         uint64_t _tv = static_cast<uint64_t>(171u);
-        regs::set_uint64_rw(_tv);
-        REG_VERIFY_ASSERT(regs::get_uint64_rw() == _tv);
+        Regs::set_uint64_rw(_tv);
+        REG_VERIFY_ASSERT(Regs::get_uint64_rw() == _tv);
     }
 
     // uint48_rw: unsigned 48-bit | rw | bank=1 | wpr=8
     {
-        regs::reg_reset();
+        Regs::reg_reset();
         uint64_t _tv = static_cast<uint64_t>(171u);
-        regs::set_uint48_rw(_tv);
-        REG_VERIFY_ASSERT(regs::get_uint48_rw() == _tv);
+        Regs::set_uint48_rw(_tv);
+        REG_VERIFY_ASSERT(Regs::get_uint48_rw() == _tv);
     }
 
     // uint32_rw: unsigned 32-bit | rw | bank=1 | wpr=4
     {
-        regs::reg_reset();
+        Regs::reg_reset();
         uint32_t _tv = static_cast<uint32_t>(171u);
-        regs::set_uint32_rw(_tv);
-        REG_VERIFY_ASSERT(regs::get_uint32_rw() == _tv);
+        Regs::set_uint32_rw(_tv);
+        REG_VERIFY_ASSERT(Regs::get_uint32_rw() == _tv);
     }
 
     // int32_rw: signed 32-bit | rw | bank=1 | wpr=4
     {
-        regs::reg_reset();
+        Regs::reg_reset();
         int32_t _tv = static_cast<int32_t>(66);
-        regs::set_int32_rw(_tv);
-        REG_VERIFY_ASSERT(regs::get_int32_rw() == _tv);
+        Regs::set_int32_rw(_tv);
+        REG_VERIFY_ASSERT(Regs::get_int32_rw() == _tv);
     }
 
     // bool_rw: bool 1-bit | rw | bank=1 | wpr=1
     {
-        regs::reg_reset();
-        regs::set_bool_rw(true);
-        REG_VERIFY_ASSERT(regs::get_bool_rw() == true);
+        Regs::reg_reset();
+        Regs::set_bool_rw(true);
+        REG_VERIFY_ASSERT(Regs::get_bool_rw() == true);
     }
 
     // float_rw: float 32-bit | rw | bank=1 | wpr=4
     {
-        regs::reg_reset();
+        Regs::reg_reset();
         float _tv = 1.5f;
-        regs::set_float_rw(_tv);
-        REG_VERIFY_ASSERT(regs::get_float_rw() == _tv);
+        Regs::set_float_rw(_tv);
+        REG_VERIFY_ASSERT(Regs::get_float_rw() == _tv);
     }
 
     // double_rw: double 64-bit | rw | bank=1 | wpr=8
     {
-        regs::reg_reset();
+        Regs::reg_reset();
         double _tv = 1.5;
-        regs::set_double_rw(_tv);
-        REG_VERIFY_ASSERT(regs::get_double_rw() == _tv);
+        Regs::set_double_rw(_tv);
+        REG_VERIFY_ASSERT(Regs::get_double_rw() == _tv);
     }
 
     // enum_rw: unsigned 8-bit | rw | bank=1 | wpr=1
     {
-        regs::reg_reset();
-        regs::set_enum_rw(regs::enum_rw_e::RED);
-        REG_VERIFY_ASSERT(regs::get_enum_rw() == regs::enum_rw_e::RED);
+        Regs::reg_reset();
+        Regs::set_enum_rw(Regs::enum_rw_e::RED);
+        REG_VERIFY_ASSERT(Regs::get_enum_rw() == Regs::enum_rw_e::RED);
     }
 
     // array_of_4_u32: unsigned 32-bit | rw | bank=4 | wpr=4
     {
-        regs::reg_reset();
-        regs::set_array_of_4_u32(0u, static_cast<uint32_t>(1u));
-        regs::set_array_of_4_u32(1u, static_cast<uint32_t>(2u));
-        regs::set_array_of_4_u32(2u, static_cast<uint32_t>(3u));
-        regs::set_array_of_4_u32(3u, static_cast<uint32_t>(4u));
-        REG_VERIFY_ASSERT(regs::get_array_of_4_u32(0u) == static_cast<uint32_t>(1u));
-        REG_VERIFY_ASSERT(regs::get_array_of_4_u32(1u) == static_cast<uint32_t>(2u));
-        REG_VERIFY_ASSERT(regs::get_array_of_4_u32(2u) == static_cast<uint32_t>(3u));
-        REG_VERIFY_ASSERT(regs::get_array_of_4_u32(3u) == static_cast<uint32_t>(4u));
+        Regs::reg_reset();
+        Regs::set_array_of_4_u32(0u, static_cast<uint32_t>(1u));
+        Regs::set_array_of_4_u32(1u, static_cast<uint32_t>(2u));
+        Regs::set_array_of_4_u32(2u, static_cast<uint32_t>(3u));
+        Regs::set_array_of_4_u32(3u, static_cast<uint32_t>(4u));
+        REG_VERIFY_ASSERT(Regs::get_array_of_4_u32(0u) == static_cast<uint32_t>(1u));
+        REG_VERIFY_ASSERT(Regs::get_array_of_4_u32(1u) == static_cast<uint32_t>(2u));
+        REG_VERIFY_ASSERT(Regs::get_array_of_4_u32(2u) == static_cast<uint32_t>(3u));
+        REG_VERIFY_ASSERT(Regs::get_array_of_4_u32(3u) == static_cast<uint32_t>(4u));
     }
 
     // array_of_4_u8: unsigned 8-bit | rw | bank=4 | wpr=1
     {
-        regs::reg_reset();
-        regs::set_array_of_4_u8(0u, static_cast<uint8_t>(1u));
-        regs::set_array_of_4_u8(1u, static_cast<uint8_t>(2u));
-        regs::set_array_of_4_u8(2u, static_cast<uint8_t>(3u));
-        regs::set_array_of_4_u8(3u, static_cast<uint8_t>(4u));
-        REG_VERIFY_ASSERT(regs::get_array_of_4_u8(0u) == static_cast<uint8_t>(1u));
-        REG_VERIFY_ASSERT(regs::get_array_of_4_u8(1u) == static_cast<uint8_t>(2u));
-        REG_VERIFY_ASSERT(regs::get_array_of_4_u8(2u) == static_cast<uint8_t>(3u));
-        REG_VERIFY_ASSERT(regs::get_array_of_4_u8(3u) == static_cast<uint8_t>(4u));
+        Regs::reg_reset();
+        Regs::set_array_of_4_u8(0u, static_cast<uint8_t>(1u));
+        Regs::set_array_of_4_u8(1u, static_cast<uint8_t>(2u));
+        Regs::set_array_of_4_u8(2u, static_cast<uint8_t>(3u));
+        Regs::set_array_of_4_u8(3u, static_cast<uint8_t>(4u));
+        REG_VERIFY_ASSERT(Regs::get_array_of_4_u8(0u) == static_cast<uint8_t>(1u));
+        REG_VERIFY_ASSERT(Regs::get_array_of_4_u8(1u) == static_cast<uint8_t>(2u));
+        REG_VERIFY_ASSERT(Regs::get_array_of_4_u8(2u) == static_cast<uint8_t>(3u));
+        REG_VERIFY_ASSERT(Regs::get_array_of_4_u8(3u) == static_cast<uint8_t>(4u));
     }
 
     // command_u16_w: unsigned 16-bit | w | bank=1 | wpr=2
     {
-        regs::reg_reset();
+        Regs::reg_reset();
         uint16_t _tv = static_cast<uint16_t>(171u);
-        regs::set_command_u16_w(_tv);
-        REG_VERIFY_ASSERT(regs::get_command_u16_w() == _tv);
+        Regs::set_command_u16_w(_tv);
+        REG_VERIFY_ASSERT(Regs::get_command_u16_w() == _tv);
     }
 
     // register_with_bitfields: unsigned 16-bit | rw | bank=1 | wpr=2
     {
-        regs::reg_reset();
+        Regs::reg_reset();
         uint16_t _tv = static_cast<uint16_t>(171u);
-        regs::set_register_with_bitfields(_tv);
-        REG_VERIFY_ASSERT(regs::get_register_with_bitfields() == _tv);
+        Regs::set_register_with_bitfields(_tv);
+        REG_VERIFY_ASSERT(Regs::get_register_with_bitfields() == _tv);
     }
 
     // group1_reg1: unsigned 16-bit | rw | bank=1 | wpr=2
     {
-        regs::reg_reset();
+        Regs::reg_reset();
         uint16_t _tv = static_cast<uint16_t>(171u);
-        regs::set_group1_reg1(_tv);
-        REG_VERIFY_ASSERT(regs::get_group1_reg1() == _tv);
+        Regs::set_group1_reg1(_tv);
+        REG_VERIFY_ASSERT(Regs::get_group1_reg1() == _tv);
     }
 
     // group1_reg2: float 32-bit | rw | bank=1 | wpr=4
     {
-        regs::reg_reset();
+        Regs::reg_reset();
         float _tv = 1.5f;
-        regs::set_group1_reg2(_tv);
-        REG_VERIFY_ASSERT(regs::get_group1_reg2() == _tv);
+        Regs::set_group1_reg2(_tv);
+        REG_VERIFY_ASSERT(Regs::get_group1_reg2() == _tv);
     }
 
     // group2_nested_group_reg3: bool 1-bit | rw | bank=1 | wpr=1
     {
-        regs::reg_reset();
-        regs::set_group2_nested_group_reg3(true);
-        REG_VERIFY_ASSERT(regs::get_group2_nested_group_reg3() == true);
+        Regs::reg_reset();
+        Regs::set_group2_nested_group_reg3(true);
+        REG_VERIFY_ASSERT(Regs::get_group2_nested_group_reg3() == true);
     }
 
     // multiple_groups: count=4 — no per-instance accessors; tested via comm protocol
 
     // aligned_group_current_limit: unsigned 16-bit | rw | bank=1 | wpr=2
     {
-        regs::reg_reset();
+        Regs::reg_reset();
         uint16_t _tv = static_cast<uint16_t>(171u);
-        regs::set_aligned_group_current_limit(_tv);
-        REG_VERIFY_ASSERT(regs::get_aligned_group_current_limit() == _tv);
+        Regs::set_aligned_group_current_limit(_tv);
+        REG_VERIFY_ASSERT(Regs::get_aligned_group_current_limit() == _tv);
     }
 
     // aligned_group_energy_wh: unsigned 64-bit | rw | bank=1 | wpr=8
     {
-        regs::reg_reset();
+        Regs::reg_reset();
         uint64_t _tv = static_cast<uint64_t>(171u);
-        regs::set_aligned_group_energy_wh(_tv);
-        REG_VERIFY_ASSERT(regs::get_aligned_group_energy_wh() == _tv);
+        Regs::set_aligned_group_energy_wh(_tv);
+        REG_VERIFY_ASSERT(Regs::get_aligned_group_energy_wh() == _tv);
     }
 
     return 0;

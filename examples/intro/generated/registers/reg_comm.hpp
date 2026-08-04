@@ -8,7 +8,7 @@
 #include "reg_types.hpp"
 #include <cstdint>
 
-namespace regs {
+namespace Regs {
 
     // --- Register type tag ---------------------------------------
     enum class RegType : uint8_t {
@@ -54,4 +54,4 @@ namespace regs {
     // Zero all register storage and clear all pending write buffers.
     void reg_reset();
 
-} // namespace regs
+} // namespace Regs

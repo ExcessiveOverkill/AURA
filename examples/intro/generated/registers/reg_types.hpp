@@ -24,7 +24,7 @@
 #  define REG_BIG_ENDIAN 0
 #endif
 
-namespace regs {
+namespace Regs {
 
     // --- Word type -----------------------------------------------
     // Smallest addressable unit: 8 bits.
@@ -59,4 +59,4 @@ namespace regs {
         BLUE = 2
     };
 
-} // namespace regs
+} // namespace Regs

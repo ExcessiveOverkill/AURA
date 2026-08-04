@@ -5,9 +5,9 @@
 
 #include "reg_storage.hpp"
 
-namespace regs {
+namespace Regs {
 
     // Zero-initialised: all registers start at 0 until reg_reset() or explicit writes.
     RegMap_t regs = {};
 
-} // namespace regs
+} // namespace Regs

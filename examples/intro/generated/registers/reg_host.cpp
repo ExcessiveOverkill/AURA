@@ -46,7 +46,7 @@ int main() {
         _setmode(_fileno(stdin),  _O_BINARY);
         _setmode(_fileno(stdout), _O_BINARY);
     #endif
-    regs::reg_reset();
+    Regs::reg_reset();
 
     uint8_t  cmd;
     uint16_t addr, count;
@@ -54,19 +54,19 @@ int main() {
         if (!rd(&addr, 2) || !rd(&count, 2)) break;
 
         if (cmd == CMD_READ) {
-            std::vector<regs::word_t> out(count);
-            uint8_t s = static_cast<uint8_t>(regs::reg_read(addr, out.data(), count));
+            std::vector<Regs::word_t> out(count);
+            uint8_t s = static_cast<uint8_t>(Regs::reg_read(addr, out.data(), count));
             wr(&s, 1);
             if (s <= 2) {
                 wr(out.data(), count * 1u);
             }
         } else if (cmd == CMD_WRITE) {
-            std::vector<regs::word_t> data(count);
+            std::vector<Regs::word_t> data(count);
             if (!rd(data.data(), count * 1u)) break;
-            uint8_t s = static_cast<uint8_t>(regs::reg_write(addr, data.data(), count));
+            uint8_t s = static_cast<uint8_t>(Regs::reg_write(addr, data.data(), count));
             wr(&s, 1);
     } else if (cmd == CMD_RESET) {
-        regs::reg_reset();
+        Regs::reg_reset();
         uint8_t s = 0; wr(&s, 1);
 } else if (cmd == CMD_VERIFY) {
     int r = reg_verify();
@@ -74,7 +74,7 @@ int main() {
 } else if (cmd == CMD_META_READ) {
     // addr field reused as byte offset; count field = byte count
     std::vector<uint8_t> meta_out(count);
-    uint8_t s = regs::meta_read(addr, meta_out.data(), count);
+    uint8_t s = Regs::meta_read(addr, meta_out.data(), count);
     wr(&s, 1);
     if (s == 0) {
         wr(meta_out.data(), count);

@@ -182,13 +182,13 @@ const RegDocEntry* reg_doc_by_addr(uint16_t addr) {
 }
 
 uint8_t reg_doc_word_bytes() {
-    return static_cast<uint8_t>(sizeof(regs::word_t));
+    return static_cast<uint8_t>(sizeof(Regs::word_t));
 }
 
 // --- Shell config factory ------------------------------------
 static uint8_t _shell_read(uint16_t a, uint32_t* o, uint16_t c) {
     uint8_t tmp[c];
-    uint8_t s = static_cast<uint8_t>(regs::reg_read(a, tmp, c));
+    uint8_t s = static_cast<uint8_t>(Regs::reg_read(a, tmp, c));
     if (s <= 2u) for (uint16_t i = 0; i < c; ++i) o[i] = tmp[i];
     return s;
 }
@@ -196,14 +196,14 @@ static uint8_t _shell_write(uint16_t a, const uint32_t* d, uint16_t c) {
     uint8_t tmp[c];
     for (uint16_t i = 0; i < c; ++i)
         tmp[i] = static_cast<uint8_t>(d[i]);
-    return static_cast<uint8_t>(regs::reg_write(a, tmp, c));
+    return static_cast<uint8_t>(Regs::reg_write(a, tmp, c));
 }
 
 RegShellConfig make_shell_config(void (*putc_fn)(char c), const char* prompt) {
     RegShellConfig cfg;
     cfg.reg_read  = _shell_read;
     cfg.reg_write = _shell_write;
-    cfg.reg_reset = regs::reg_reset;
+    cfg.reg_reset = Regs::reg_reset;
     cfg.entries     = reg_doc_entries;
     cfg.entry_count = REG_DOC_COUNT;
     cfg.groups      = reg_doc_groups;

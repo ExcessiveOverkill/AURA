@@ -97,7 +97,7 @@ class TestTypesHeader:
     def test_namespace_wraps_content(self, simple_rm, out_dir):
         _gen(simple_rm, out_dir)
         content = _read(out_dir,"reg_types.hpp")
-        assert "namespace regs" in content
+        assert "namespace Regs" in content
 
     def test_generated_header_comment(self, simple_rm, out_dir):
         _gen(simple_rm, out_dir)
@@ -139,7 +139,7 @@ class TestStorageHeader:
 
     def test_namespace_wraps_content(self, simple_rm, out_dir):
         _gen(simple_rm, out_dir)
-        assert "namespace regs" in _read(out_dir,"reg_storage.hpp")
+        assert "namespace Regs" in _read(out_dir,"reg_storage.hpp")
 
     def test_leaf_single_word_has_get_set_methods(self, simple_rm, out_dir):
         _gen(simple_rm, out_dir)
@@ -395,7 +395,7 @@ class TestCommSource:
 
     def test_namespace_wraps_content(self, simple_rm, out_dir):
         _gen(simple_rm, out_dir)
-        assert "namespace regs" in _read(out_dir,"reg_comm.cpp")
+        assert "namespace Regs" in _read(out_dir,"reg_comm.cpp")
 
 
 # ---------------------------------------------------------------------------

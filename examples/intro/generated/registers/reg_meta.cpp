@@ -6,7 +6,7 @@
 #include "reg_meta.hpp"
 #include <cstring>
 
-namespace regs {
+namespace Regs {
 
     // --- Metadata byte stream (ROM) ------------------------------
     static const uint8_t _meta_blob[REG_META_SIZE] = {
@@ -175,4 +175,4 @@ namespace regs {
         return 0u;
     }
 
-} // namespace regs
+} // namespace Regs
